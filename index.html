@@ -850,57 +850,60 @@ function render() { renderTab(activeTab); }
 function renderBuyers() {
   const el = document.getElementById('buyersList');
   const buyers = currentUser.role === 'admin' ? allBuyers : allBuyers;
-
   if (!buyers.length) { el.innerHTML = '<div class="empty">Байеры не загружены</div>'; return; }
 
-  // Sort by match rate for sellers
   let sorted = [...buyers];
   if (currentUser.role === 'seller') {
-    sorted.sort((a, b) => a.company.localeCompare(b.company, 'ru'));
+    sorted.sort(function(a,b) { return a.company.localeCompare(b.company, 'ru'); });
   }
 
-  el.innerHTML = sorted.map(b => {
+  el.innerHTML = sorted.map(function(b) {
     const m = getMatch(b.id);
-    const initials = b.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const initials = b.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
     const matchCls = m.rate >= 65 ? 'match-gold' : m.rate >= 40 ? 'match-ok' : 'match-dim';
     const dotCls   = m.rate >= 65 ? 'dot-gold'   : m.rate >= 40 ? 'dot-ok'   : 'dot-dim';
-    const existing = myMeetings.find(mt =>
-      (mt.seller_id === currentUser.id || mt.seller?.id === currentUser.id) &&
-      (mt.buyer_id  === b.id           || mt.buyer?.id  === b.id)
-    );
+    const existing = myMeetings.find(function(mt) {
+      return (mt.seller_id === currentUser.id || (mt.seller && mt.seller.id === currentUser.id)) &&
+             (mt.buyer_id  === b.id           || (mt.buyer  && mt.buyer.id  === b.id));
+    });
     const btnDisabled = (currentUser.role === 'admin' || !!existing) ? 'disabled' : '';
     const btnLabel = existing
-      ? (existing.status === 'confirmed' ? '✓ Подтверждено' : '⏳ Ожидает')
+      ? (existing.status === 'confirmed' ? '&#10003; Подтверждено' : '&#9203; Ожидает')
       : 'Предложить встречу';
     const avatarHtml = b.avatar_url
-      ? `<img src="${b.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      ? '<img src="' + b.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
       : initials;
 
-    return `
-      <div class="buyer-item">
-        <div class="buyer-info" style="cursor:pointer;" onclick="showBuyerCard('${b.id}')">
-          <div class="buyer-avatar" title="Нажми чтобы открыть профиль">${avatarHtml}</div>
-          <div>
-            <div class="buyer-name">${b.name}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-left:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div class="buyer-company">${b.company}</div>
-          </div>
-        </div>
-        <div class="buyer-right">
+    // Preview tags — directions if seller profile, else company type
+    const dirTags = (b.directions && b.directions.length)
+      ? b.directions.slice(0,3).map(function(d){ return '<span class="tag" style="font-size:10px;padding:1px 7px;">' + d + '</span>'; }).join('')
+      : '';
+    const audienceHint = b.audience
+      ? '<span style="font-size:11px;color:var(--text-dim);margin-left:4px;">· ' + b.audience + '</span>'
+      : '';
 
-          ${currentUser.role === 'seller' ? `
-            <button class="btn btn-gold btn-sm" onclick="openPropose('${b.id}')" ${btnDisabled}>${btnLabel}</button>
-          ` : ''}
-        </div>
-      </div>`;
+    return '<div class="buyer-item" style="flex-wrap:wrap;gap:10px;">' +
+      '<div class="buyer-info" style="cursor:pointer;flex:1;min-width:0;" onclick="showBuyerCard(\'' + b.id + '\')">' +
+        '<div class="buyer-avatar" style="flex-shrink:0;">' + avatarHtml + '</div>' +
+        '<div style="min-width:0;">' +
+          '<div class="buyer-name" style="display:flex;align-items:center;gap:4px;">' +
+            b.company +
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '</div>' +
+          '<div class="buyer-company">' + b.name + audienceHint + '</div>' +
+          (dirTags ? '<div style="margin-top:4px;">' + dirTags + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="buyer-right" style="flex-shrink:0;">' +
+        
+        (currentUser.role === 'seller'
+          ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" ' + btnDisabled + '>' + btnLabel + '</button>'
+          : '') +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
-function getMatch(buyerId) {
-  const m = myMatches.find(x => x.buyer_id === buyerId);
-  return m ? { rate: m.match_rate, reason: m.match_reason } : { rate: 0, reason: '' };
-}
 
 /* ── SCHEDULE ── */
 function renderSchedule() {
@@ -923,10 +926,10 @@ function renderSchedule() {
     return '<div class="schedule-item">' +
       '<div class="schedule-time">' + (m.slot&&m.slot.time_label||'—') + '</div>' +
       '<div class="schedule-info" style="cursor:pointer;" onclick="' + clickFn + '">' +
-        '<div class="schedule-name">' + (other&&other.name||'—') +
+        '<div class="schedule-name">' + (other&&other.company||'—') +
           ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
         '</div>' +
-        '<div class="schedule-company">' + (other&&other.company||'—') + '</div>' +
+        '<div class="schedule-company">' + (other&&other.name||'—') + '</div>' +
       '</div>' +
       '<span class="status-badge status-confirmed">✓ Подтверждено</span>' +
     '</div>';
@@ -966,10 +969,10 @@ function renderRequests() {
       '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller&&seller.id) + '\')">' +
         '<div class="buyer-avatar" style="background:var(--navy);">' + avatarHtml + '</div>' +
         '<div>' +
-          '<div class="buyer-name">' + (seller&&seller.name||'—') +
+          '<div class="buyer-name">' + (seller&&seller.company||'—') +
             ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
           '</div>' +
-          '<div class="buyer-company">' + (seller&&seller.company||'—') + ' · ' + (m.slot&&m.slot.time_label||'—') + '</div>' +
+          '<div class="buyer-company">' + (seller&&seller.name||'—') + ' · ' + (m.slot&&m.slot.time_label||'—') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="buyer-right">' +
@@ -1180,11 +1183,12 @@ function toggleAltSlot() {
     .map(m => m.slot_id);
 
   g.style.display = 'block';
-  document.getElementById('altSlots').innerHTML = allSlots.map(s => {
-    const taken = takenSlots.includes(s.id) || s.id === meetingTarget.slot_id;
-    return `<button class="slot-btn ${taken ? 'taken' : ''}"
-      onclick="${taken ? '' : `selectAltSlot('${s.id}', this)`}"
-      ${taken ? 'disabled' : ''}>${s.time_label}</button>`;
+  document.getElementById('altSlots').innerHTML = allSlots.map(function(s) {
+    var taken = takenSlots.includes(s.id) || s.id === meetingTarget.slot_id;
+    var cls = 'slot-btn' + (taken ? ' taken' : '');
+    var oc = taken ? '' : ' onclick="selectAltSlot(\'' + s.id + '\', this)"';
+    var dis = taken ? ' disabled' : '';
+    return '<button class="' + cls + '"' + oc + dis + '>' + s.time_label + '</button>';
   }).join('');
 }
 
@@ -1402,124 +1406,6 @@ function showCredentials(login, pass, name, company, role) {
   document.body.appendChild(div);
 }
 
-async function renderAdminParticipants() {
-  const el = document.getElementById('adminParticipants');
-  if (!el) return;
-  const all = [...allSellers, ...allBuyers].sort((a,b) => {
-    if (a.role !== b.role) return a.role === 'seller' ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-  if (!all.length) { el.innerHTML = '<div class="empty">Нет участников</div>'; return; }
-  el.innerHTML = all.map(function(u) {
-    const initials = u.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    const roleCls  = u.role === 'seller' ? 'role-seller' : 'role-buyer';
-    const roleLabel= u.role === 'seller' ? 'SELLER' : 'БАЙЕР';
-    const avatarStyle = u.role === 'buyer' ? 'background:rgba(76,175,130,0.15);color:var(--ok);' : '';
-    return '<div class="buyer-item">' +
-      '<div class="buyer-info">' +
-        '<div class="buyer-avatar" style="' + avatarStyle + '">' + initials + '</div>' +
-        '<div>' +
-          '<div class="buyer-name">' + u.name + ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span></div>' +
-          '<div class="buyer-company">' + u.company + ' · логин: <span style="font-family:monospace;color:var(--gold);">' + u.login + '</span></div>' +
-        '</div>' +
-      '</div>' +
-      '<button class="btn btn-danger btn-sm" onclick="deleteParticipant(\'' + u.id + '\',\'' + u.name.replace(/'/g,"\\'") + '\')">Удалить</button>' +
-    '</div>';
-  }).join('');
-}
-
-async function deleteParticipant(id, name) {
-  if (!confirm('Удалить участника ' + name + '? Все его встречи тоже удалятся.')) return;
-  await sb.from('meetings').delete().or('seller_id.eq.' + id + ',buyer_id.eq.' + id);
-  await sb.from('users').delete().eq('id', id);
-  await loadUsers();
-  renderAdmin();
-  toast('Участник удалён');
-}
-
-
-
-function togglePass() {
-  const inp = document.getElementById('loginPass');
-  const icon = document.getElementById('eyeIcon');
-  const show = inp.type === 'password';
-  inp.type = show ? 'text' : 'password';
-  icon.innerHTML = show
-    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
-    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-}
-
-
-// ══════════════════════════════════════════════
-// PROFILE: EDIT + AVATAR UPLOAD
-// ══════════════════════════════════════════════
-
-function renderProfile() {
-  const el = document.getElementById('profileContent');
-  const u = currentUser;
-  const avatarUrl = u.avatar_url || '';
-  const logoUrl   = u.logo_url || '';
-  const initials  = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-
-  el.innerHTML =
-    '<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;max-width:760px;">' +
-
-    // LEFT: avatars
-    '<div>' +
-      '<div class="card" style="text-align:center;padding:20px;">' +
-        '<div class="card-title">Фото</div>' +
-        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;">JPG · PNG · WEBP · до 1 МБ</div>' +
-        '<div id="avatarPreview" style="width:90px;height:90px;border-radius:50%;margin:0 auto 12px;overflow:hidden;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:22px;color:var(--gold);border:2px solid var(--card-border);">' +
-          (avatarUrl ? '<img src="'+avatarUrl+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
-        '</div>' +
-        '<label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;">' +
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
-          'Загрузить' +
-          '<input type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this, \'avatar\')">' +
-        '</label>' +
-      '</div>' +
-      '<div class="card" style="text-align:center;padding:20px;margin-top:12px;">' +
-        '<div class="card-title">Логотип</div>' +
-        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;">JPG · PNG · SVG · до 1 МБ</div>' +
-        '<div id="logoPreview" style="width:90px;height:60px;margin:0 auto 12px;overflow:hidden;background:var(--navy-b);display:flex;align-items:center;justify-content:center;border-radius:8px;border:2px solid var(--card-border);">' +
-          (logoUrl ? '<img src="'+logoUrl+'" style="width:100%;height:100%;object-fit:contain;padding:6px;">' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
-        '</div>' +
-        '<label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;">' +
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
-          'Загрузить' +
-          '<input type="file" accept="image/*" style="display:none;" onchange="uploadAvatar(this, \'logo\')">' +
-        '</label>' +
-      '</div>' +
-    '</div>' +
-
-    // RIGHT: edit form
-    '<div class="card">' +
-      '<div class="card-title">Редактировать профиль</div>' +
-      '<div class="form-group"><label class="form-label">Имя</label>' +
-        '<input id="pName" type="text" class="form-input" value="'+escHtml(u.name)+'"></div>' +
-      '<div class="form-group"><label class="form-label">Компания</label>' +
-        '<input id="pCompany" type="text" class="form-input" value="'+escHtml(u.company)+'"></div>' +
-      (u.role !== 'buyer' ? (
-        '<div class="form-group"><label class="form-label">Основные направления (через запятую)</label>' +
-          '<input id="pDirections" type="text" class="form-input" value="'+(u.directions||[]).join(', ')+'"></div>' +
-        '<div class="form-group"><label class="form-label">Целевая аудитория</label>' +
-          '<input id="pAudience" type="text" class="form-input" value="'+escHtml(u.audience||'')+'"></div>' +
-        '<div class="form-group"><label class="form-label">Ключевые услуги</label>' +
-          '<input id="pServices" type="text" class="form-input" value="'+escHtml(u.services||'')+'"></div>' +
-        '<div class="form-group"><label class="form-label">Уникальное предложение</label>' +
-          '<textarea id="pUtp" class="form-input">'+escHtml(u.utp||'')+'</textarea></div>' +
-        '<div class="form-group"><label class="form-label">Заметки для партнёров</label>' +
-          '<textarea id="pNotes" class="form-input">'+escHtml(u.notes||'')+'</textarea></div>'
-      ) : '') +
-      '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">' +
-        '<button class="btn btn-gold" onclick="saveProfile()" style="display:flex;align-items:center;gap:6px;">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>' +
-          'Сохранить' +
-        '</button>' +
-      '</div>' +
-    '</div>' +
-    '</div>';
-}
 
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1556,8 +1442,8 @@ async function uploadAvatar(input, type) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
-    const col = type === 'avatar' ? 'avatar_url' : 'logo_url';
-    const { error } = await sb.from('users').update({ [col]: dataUrl }).eq('id', currentUser.id);
+    const updateData = type === 'avatar' ? { avatar_url: dataUrl } : { logo_url: dataUrl };
+    const { error } = await sb.from('users').update(updateData).eq('id', currentUser.id);
     if (error) { toast('Ошибка загрузки: ' + error.message); return; }
     currentUser[col] = dataUrl;
 
@@ -1644,19 +1530,34 @@ async function renderAdminParticipants() {
       '<div class="buyer-info">' +
         '<div class="buyer-avatar" style="' + avatarBg + '">' + avatarHtml + '</div>' +
         '<div>' +
-          '<div class="buyer-name">' + u.name + ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
-          (siblings > 0 ? ' <span style="font-size:10px;color:var(--text-dim);">+' + siblings + ' из компании</span>' : '') +
+          '<div style="font-weight:600;font-size:14px;margin-bottom:1px;">' + u.company +
+            ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
+            (siblings > 0 ? ' <span style="font-size:10px;color:var(--text-dim);">+' + siblings + ' чел.</span>' : '') +
           '</div>' +
-          '<div class="buyer-company">' + u.company + ' · логин: <span style="font-family:monospace;color:var(--gold);">' + u.login + '</span>' +
+          '<div class="buyer-company">' + u.name + ' · логин: <span style="font-family:monospace;color:var(--gold);">' + u.login + '</span>' +
           ' · пароль: <span id="pwd_' + u.id + '" style="font-family:monospace;color:var(--text-dim);cursor:pointer;" onclick="togglePwdView(\'' + u.id + '\',\'' + u.password_hash.replace(/'/g,"\\'") + '\')" title="Нажми чтобы показать">••••••••</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
-      '<div style="display:flex;gap:6px;">' +
+      '<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;">' +
+        '<button class="btn btn-outline btn-sm" onclick="quickCopy(this)" data-login="' + u.login + '" data-pass="' + u.password_hash + '" title="Скопировать логин и пароль">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        '</button>' +
+        '<label class="btn btn-outline btn-sm" style="cursor:pointer;" title="Фото участника">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>' +
+          '<input type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadParticipantImage(this,\'' + u.id + '\',\'avatar\')">' +
+        '</label>' +
+        '<label class="btn btn-outline btn-sm" style="cursor:pointer;" title="Логотип компании">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+          '<input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" style="display:none;" onchange="uploadParticipantImage(this,\'' + u.id + '\',\'logo\')">' +
+        '</label>' +
+        '<button class="btn btn-outline btn-sm" onclick="exportParticipantPDF(\'' + u.id + '\')" title="Расписание PDF">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+        '</button>' +
         '<button class="btn btn-outline btn-sm" onclick="openEditParticipant(\'' + u.id + '\')" title="Редактировать">' +
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
         '</button>' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteParticipant(\'' + u.id + '\',\'' + u.name.replace(/'/g,"\\'") + '\')" title="Удалить">' +
+        '<button class="btn btn-danger btn-sm" data-uid="' + u.id + '" data-uname="' + u.name.replace(/"/g,'') + '" onclick="doDelete(this)" title="Удалить">' +
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
         '</button>' +
       '</div>' +
@@ -1728,8 +1629,11 @@ async function openEditParticipant(userId) {
         '<div class="form-group"><label class="form-label">УТП</label><textarea id="ep_utp" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>' +
         '<div class="form-group"><label class="form-label">Заметки для партнёров</label><textarea id="ep_notes" class="form-input">' + escHtml(u.notes||'') + '</textarea></div>'
       : '') +
-      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:12px;">' +
-        'Участников от этой компании: <b style="color:var(--gold);">' + (sibCount+1) + '</b>' +
+      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">' +
+        '<span>Участников от этой компании: <b style="color:var(--gold);">' + (sibCount+1) + '</b></span>' +
+        '<button class="btn btn-outline btn-sm" onclick="addSiblingParticipant(\'' + u.company + '\',\'' + u.role + '\');document.getElementById(\'modalEditParticipant\').remove();" style="font-size:11px;">' +
+          '+ Добавить ещё от этой компании' +
+        '</button>' +
       '</div>' +
       '<div class="modal-actions">' +
         '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalEditParticipant\').remove()">Отмена</button>' +
@@ -1951,9 +1855,9 @@ function showBuyerCard(buyerId) {
           (buyer.avatar_url ? '<img src="'+buyer.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
         '</div>' +
         '<div>' +
-          '<div style="font-size:17px;font-weight:500;">' + buyer.name + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + buyer.company + '</div>' +
-
+          '<div style="font-size:17px;font-weight:600;">' + buyer.company + '</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + buyer.name + '</div>' +
+          (m.rate > 0 ? '<div style="margin-top:6px;"><span class="match-badge '+(m.rate>=65?'match-gold':m.rate>=40?'match-ok':'match-dim')+'"><span class="match-dot '+(m.rate>=65?'dot-gold':m.rate>=40?'dot-ok':'dot-dim')+'"></span>Match Rate: '+m.rate+'%</span></div>' : '') +
         '</div>' +
         (buyer.logo_url ? '<img src="'+buyer.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
       '</div>' +
@@ -1964,7 +1868,7 @@ function showBuyerCard(buyerId) {
         (!buyer.audience && !buyer.services && !buyer.notes ?
           '<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:13px;">Участник ещё не заполнил профиль</div>' : '') +
       '</div>' +
-
+      (m.reason ? '<div style="margin-top:12px;padding:12px;background:rgba(178,144,106,0.08);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.5;"><b style="color:var(--gold);">Почему этот матч:</b> ' + m.reason + '</div>' : '') +
       '<div class="modal-actions">' +
         '<button class="btn btn-outline btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
         '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove();openPropose(\''+buyerId+'\')">Предложить встречу</button>' +
@@ -2045,8 +1949,8 @@ function uploadParticipantImage(input, userId, type) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
-    const col = type === 'avatar' ? 'avatar_url' : 'logo_url';
-    const { error } = await sb.from('users').update({ [col]: dataUrl }).eq('id', userId);
+    const updateData2 = type === 'avatar' ? { avatar_url: dataUrl } : { logo_url: dataUrl };
+    const { error } = await sb.from('users').update(updateData2).eq('id', userId);
     if (error) { toast('Ошибка: ' + error.message); return; }
     // update local cache
     const u = [...allSellers,...allBuyers].find(function(x){ return x.id===userId; });
@@ -2077,8 +1981,8 @@ function showSellerCard(sellerId) {
           (seller.avatar_url ? '<img src="'+seller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
         '</div>' +
         '<div style="flex:1;">' +
-          '<div style="font-size:17px;font-weight:500;">' + seller.name + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + seller.company + '</div>' +
+          '<div style="font-size:17px;font-weight:600;">' + seller.company + '</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + seller.name + '</div>' +
         '</div>' +
         (seller.logo_url ? '<img src="'+seller.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
       '</div>' +
@@ -2100,6 +2004,55 @@ function showSellerCard(sellerId) {
   document.body.appendChild(div);
 }
 
+
+
+// ══════════════════════════════════════════════
+// QUICK COPY credentials
+// ══════════════════════════════════════════════
+function quickCopy(btn) {
+  const login = btn.dataset.login || '';
+  const pass  = btn.dataset.pass  || '';
+  const text = 'Логин: ' + login + '\nПароль: ' + pass;
+  const doToast = function() { toast('✓ Логин и пароль скопированы'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doToast).catch(function() {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      ta.remove(); doToast();
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    ta.remove(); doToast();
+  }
+}
+
+
+
+function addSiblingParticipant(company, role) {
+  // Pre-fill the create form with company name and role
+  const companyInput = document.getElementById('newCompany');
+  const roleSelect   = document.getElementById('newRole');
+  if (companyInput) {
+    companyInput.value = company;
+    previewLogin(company);
+  }
+  if (roleSelect) roleSelect.value = role;
+  // Scroll to create form
+  companyInput && companyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  companyInput && companyInput.focus();
+  toast('Компания заполнена — введите имя нового участника');
+}
+
+
+
+function doDelete(btn) {
+  var uid = btn.dataset.uid;
+  var uname = btn.dataset.uname;
+  deleteParticipant(uid, uname);
+}
 
 // ══════════════════════════════════════════════
 // BOOT
