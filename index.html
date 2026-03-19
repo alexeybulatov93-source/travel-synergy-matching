@@ -682,7 +682,7 @@ async function doLogin() {
     .eq('event_id', EVENT_ID)
     .single();
 
-  if (error || !data) { showLoginError('Неверный email или пароль'); return; }
+  if (error || !data) { showLoginError('Неверный логин или пароль'); return; }
 
   currentUser = data;
   sessionStorage.setItem('ts_user_id', data.id);
@@ -888,12 +888,7 @@ function renderBuyers() {
           </div>
         </div>
         <div class="buyer-right">
-          ${m.rate > 0 ? `
-            <div class="match-badge ${matchCls}">
-              <span class="match-dot ${dotCls}"></span>
-              ${m.rate}%
-            </div>
-          ` : ''}
+
           ${currentUser.role === 'seller' ? `
             <button class="btn btn-gold btn-sm" onclick="openPropose('${b.id}')" ${btnDisabled}>${btnLabel}</button>
           ` : ''}
@@ -921,15 +916,20 @@ function renderSchedule() {
 
   el.innerHTML = sorted.map(m => {
     const other = currentUser.role === 'seller' ? m.buyer : m.seller;
-    return `
-      <div class="schedule-item">
-        <div class="schedule-time">${m.slot?.time_label || '—'}</div>
-        <div class="schedule-info">
-          <div class="schedule-name">${other?.name || '—'}</div>
-          <div class="schedule-company">${other?.company || '—'}</div>
-        </div>
-        <span class="status-badge status-confirmed">✓ Подтверждено</span>
-      </div>`;
+    const otherId = other && other.id;
+    const clickFn = currentUser.role === 'seller'
+      ? 'showBuyerCard(\'' + otherId + '\')'
+      : 'showSellerCard(\'' + otherId + '\')';
+    return '<div class="schedule-item">' +
+      '<div class="schedule-time">' + (m.slot&&m.slot.time_label||'—') + '</div>' +
+      '<div class="schedule-info" style="cursor:pointer;" onclick="' + clickFn + '">' +
+        '<div class="schedule-name">' + (other&&other.name||'—') +
+          ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '</div>' +
+        '<div class="schedule-company">' + (other&&other.company||'—') + '</div>' +
+      '</div>' +
+      '<span class="status-badge status-confirmed">✓ Подтверждено</span>' +
+    '</div>';
   }).join('');
 }
 
@@ -950,28 +950,33 @@ function renderRequests() {
     return;
   }
 
-  const renderItem = m => {
+  const renderItem = function(m) {
     const seller = m.seller;
-    const initials = seller?.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?';
+    const initials = (seller&&seller.name) ? seller.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() : '?';
+    const fullSeller = allSellers.find(function(s){ return s.id === (seller&&seller.id); }) || seller || {};
+    const avatarHtml = fullSeller.avatar_url
+      ? '<img src="'+fullSeller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : initials;
     const statusMap = {
       pending: '<span class="status-badge status-pending">Ожидает ответа</span>',
       confirmed: '<span class="status-badge status-confirmed">✓ Подтверждено</span>',
       declined: '<span class="status-badge status-declined">Отклонено</span>',
     };
-    return `
-      <div class="buyer-item">
-        <div class="buyer-info">
-          <div class="buyer-avatar" style="background:var(--navy)">${initials}</div>
-          <div>
-            <div class="buyer-name">${seller?.name || '—'}</div>
-            <div class="buyer-company">${seller?.company || '—'} · ${m.slot?.time_label || '—'}</div>
-          </div>
-        </div>
-        <div class="buyer-right">
-          ${statusMap[m.status] || ''}
-          ${m.status === 'pending' ? `<button class="btn btn-gold btn-sm" onclick="openMeeting('${m.id}')">Ответить</button>` : ''}
-        </div>
-      </div>`;
+    return '<div class="buyer-item">' +
+      '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller&&seller.id) + '\')">' +
+        '<div class="buyer-avatar" style="background:var(--navy);">' + avatarHtml + '</div>' +
+        '<div>' +
+          '<div class="buyer-name">' + (seller&&seller.name||'—') +
+            ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '</div>' +
+          '<div class="buyer-company">' + (seller&&seller.company||'—') + ' · ' + (m.slot&&m.slot.time_label||'—') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="buyer-right">' +
+        (statusMap[m.status]||'') +
+        (m.status === 'pending' ? '<button class="btn btn-gold btn-sm" onclick="openMeeting(\'' + m.id + '\')">Ответить</button>' : '') +
+      '</div>' +
+    '</div>';
   };
 
   el.innerHTML = (pending.length ? '<div style="margin-bottom:8px;font-size:12px;color:var(--warn);">● Ожидают ответа</div>' : '') +
@@ -1077,11 +1082,12 @@ function openPropose(buyerId) {
     .filter(m => (m.seller_id === currentUser.id || m.seller?.id === currentUser.id) && m.status !== 'declined' && m.status !== 'cancelled')
     .map(m => m.slot_id);
 
-  document.getElementById('proposeSlots').innerHTML = allSlots.map(s => {
-    const taken = takenSlots.includes(s.id);
-    return `<button class="slot-btn ${taken ? 'taken' : ''}"
-      onclick="${taken ? '' : `selectSlot('${s.id}', this)`}"
-      ${taken ? 'disabled' : ''}>${s.time_label}</button>`;
+  document.getElementById('proposeSlots').innerHTML = allSlots.map(function(s) {
+    var taken = takenSlots.includes(s.id);
+    var cls = 'slot-btn' + (taken ? ' taken' : '');
+    var oc = taken ? '' : ' onclick="selectSlot(\'' + s.id + '\', this)"';
+    var dis = taken ? ' disabled' : '';
+    return '<button class="' + cls + '"' + oc + dis + '>' + s.time_label + '</button>';
   }).join('');
 
   document.getElementById('modalPropose').style.display = 'flex';
@@ -1137,12 +1143,28 @@ function openMeeting(meetingId) {
 
   const seller = meetingTarget.seller;
   const slot   = meetingTarget.slot;
-  document.getElementById('meetingDetail').innerHTML = `
-    <div class="profile-block">
-      <div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">${seller?.company}</span></div>
-      <div class="profile-row"><span class="profile-key">Контакт</span><span class="profile-val">${seller?.name}</span></div>
-      <div class="profile-row"><span class="profile-key">Предлагаемое время</span><span class="profile-val" style="color:var(--gold);font-weight:500;">${slot?.time_label}</span></div>
-    </div>`;
+  // Find full seller data from allSellers
+  const fullSeller = allSellers.find(function(s){ return s.id === (seller && seller.id); }) || seller || {};
+  const sellerInitials = (fullSeller.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  document.getElementById('meetingDetail').innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
+      '<div style="width:46px;height:46px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:14px;color:var(--gold);flex-shrink:0;overflow:hidden;">' +
+        (fullSeller.avatar_url ? '<img src="'+fullSeller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : sellerInitials) +
+      '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-weight:500;font-size:15px;">' + (fullSeller.name||'—') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-dim);">' + (fullSeller.company||'—') + '</div>' +
+      '</div>' +
+      (fullSeller.logo_url ? '<img src="'+fullSeller.logo_url+'" style="height:32px;width:auto;object-fit:contain;max-width:90px;">' : '') +
+    '</div>' +
+    '<div class="profile-block">' +
+      '<div class="profile-row"><span class="profile-key">Время встречи</span><span class="profile-val" style="color:var(--gold);font-weight:600;font-size:15px;">' + (slot&&slot.time_label||'—') + '</span></div>' +
+      (fullSeller.directions&&fullSeller.directions.length ? '<div class="profile-row"><span class="profile-key">Направления</span><span class="profile-val">' + fullSeller.directions.join(', ') + '</span></div>' : '') +
+      (fullSeller.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">' + fullSeller.audience + '</span></div>' : '') +
+      (fullSeller.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">' + fullSeller.services + '</span></div>' : '') +
+      (fullSeller.utp ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">' + fullSeller.utp + '</span></div>' : '') +
+      (fullSeller.notes ? '<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">' + fullSeller.notes + '</span></div>' : '') +
+    '</div>';
 
   document.getElementById('modalMeeting').style.display = 'flex';
 }
@@ -1889,7 +1911,7 @@ function exportAdminPDF() {
       '</head><body>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;">' +
         '<h1>Матрица встреч · Travel Synergy</h1>' +
-        '<div style="font-size:11px;color:#888;">' + today + '</div>' +
+        '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzk1IiBoZWlnaHQ9IjE2OCIgdmlld0JveD0iMCAwIDc5NSAxNjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMzgxLjEgMTA1LjNMMzgxLjkgMTA1LjlDMzc4Ljk2NyAxMDkuNSAzNzUuMjMzIDExMi4yMzQgMzcwLjcgMTE0LjFDMzY2LjIzMyAxMTUuOSAzNjEuNSAxMTYuOCAzNTYuNSAxMTYuOEMzNDUuNCAxMTYuOCAzMzYuNCAxMTMuNCAzMjkuNiAxMDYuN0MzMjIuOCA5OS45MDA0IDMxOS41IDkxLjAwMDQgMzE5LjUgODAuMTAwNEMzMTkuNSA2OS40MDA0IDMyMi43IDYwLjYwMDQgMzI5LjMgNTMuODAwNEMzMzUuOSA0Ni45MDA0IDM0NC40IDQzLjQwMDQgMzU0LjkgNDMuNDAwNEMzNTkuOSA0My40MDA0IDM2NC43MzMgNDQuMzAwNCAzNjkuNCA0Ni4xMDA0QzM3NC4xMzMgNDcuODMzNyAzNzguMDMzIDUwLjUwMDQgMzgxLjEgNTQuMTAwNEwzODEuNiA1NC43MDA0TDM4MS4xIDU1LjQwMDRMMzc5LjcgNTcuMTAwNEwzNzkgNTcuODAwNEwzNzguMyA1Ny4yMDA0QzM3NC4zNjYgNTMuODAwNCAzNzAuNjMzIDUxLjQwMDQgMzY3LjEgNTAuMDAwNEwzNjcuNSA0OS4xMDA0TDM2Ny40IDQ5LjIwMDRMMzY3LjEgNTAuMDAwNEMzNjMuNyA0OC42MDA0IDM1OS41MzMgNDcuOTAwNCAzNTQuNiA0Ny45MDA0QzM0NSA0Ny45MDA0IDMzNy43IDUwLjkwMDQgMzMyLjIgNTYuOTAwNEMzMjYuOSA2Mi45MDA0IDMyNC4xIDcwLjYwMDQgMzI0LjEgODAuMTAwNEMzMjQuMSA5MC4xMDA0IDMyNy4xIDk3LjkwMDQgMzMzIDEwMy42QzMzOC45IDEwOS40IDM0Ni43IDExMi4zIDM1Ni41IDExMi4zQzM2NS42IDExMi4zIDM3MyAxMDkuMiAzNzguOSAxMDMuMUwzNzkuNiAxMDIuM0wzODAuMyAxMDMuMUwzODEuOCAxMDQuNkwzODEuMSAxMDUuM1pNNzEwLjQgNDQuMzAwNFYxMTUuOUg3MDYuM0w3MDYgMTE1LjVMNjU2LjkgNTIuNDAwNFYxMTUuOUg2NTIuMlY0NC4zMDA0SDY1Ni40TDY1Ni43IDQ0LjcwMDRMNzA1LjggMTA3LjhWNDQuMzAwNEg3MTAuNFpNNzk0LjggMTE1LjlINzg5LjhMNzg5LjUgMTE1LjNMNzc5LjggOTMuMjAwNEg3NDIuNkw3MzMgMTE1LjNMNzMyLjcgMTE1LjlINzI3LjhMNzI4LjQgMTE0LjVMNzU4LjkgNDQuNTAwNEw3NTkuMSA0My45MDA0SDc2My4xTDc2My40IDQ0LjUwMDRMNzk0LjIgMTE0LjVMNzk0LjggMTE1LjlaTTc3Ny45IDg4LjcwMDRMNzYxLjEgNTAuNDAwNEw3NDQuNiA4OC43MDA0SDc3Ny45Wk00NjYuOSA4MC4xMDA0QzQ2Ni45IDkwLjM2NzEgNDYzLjQzMyA5OS4wMzM3IDQ1Ni41IDEwNi4xQzQ0OS43IDExMy4yIDQ0MS4yIDExNi44IDQzMS4xIDExNi44QzQyMC44IDExNi44IDQxMi4yIDExMy4yIDQwNS40IDEwNi4xTDQwNi4xIDEwNS41VjEwNS40TDQwNS40IDEwNi4xQzM5OC42NjcgOTguOTY3MSAzOTUuMyA5MC4zMDA0IDM5NS4zIDgwLjEwMDRDMzk1LjMgNjkuOTAwNCAzOTguNzMzIDYxLjI2NzEgNDA1LjYgNTQuMjAwNEM0MTIuNSA0Ny4wMDA0IDQyMSA0My40MDA0IDQzMS4xIDQzLjQwMDRDNDQxLjQgNDMuNDAwNCA0NTAgNDcuMDAwNCA0NTYuNyA1NC4xMDA0QzQ2My41IDYxLjIwMDQgNDY2LjkgNjkuOTAwNCA0NjYuOSA4MC4xMDA0Wk00NjIuMiA4MC4xMDA0QzQ2Mi4yIDcxLjE2NzEgNDU5LjIgNjMuNTY3MSA0NTMuMiA1Ny4zMDA0QzQ0Ny4yIDUxLjAwMDQgNDM5LjkgNDcuOTAwNCA0MzEuMSA0Ny45MDA0QzQyMi4zIDQ3LjkwMDQgNDE0LjkgNTEuMDY3MSA0MDguOSA1Ny40MDA0TDQwOC4yIDU2LjcwMDRMNDA4LjMgNTYuODAwNEw0MDguOSA1Ny40MDA0QzQwMi45NjcgNjMuNzMzNyA0MDAgNzEuMzAwNCA0MDAgODAuMTAwNEM0MDAgODguODMzNyA0MDMgOTYuNDAwNCA0MDkgMTAyLjhDNDE1LjIgMTA5LjEgNDIyLjUgMTEyLjMgNDMxLjEgMTEyLjNDNDQwIDExMi4zIDQ0Ny40IDEwOS4yIDQ1My4zIDEwMi45QzQ1OS4yMzMgOTYuNTY3MSA0NjIuMiA4OC45NjcxIDQ2Mi4yIDgwLjEwMDRaTTU0NS44IDExNC4zTDU0NyAxMTUuOUg1NDEuMkw1NDAuOSAxMTUuNUw1MTYuNyA4NS4yMDA0SDQ5My4xVjExNS45SDQ4OC40VjQ0LjMwMDRINTE0LjZDNTIzLjIgNDQuMzAwNCA1MjkuOSA0NS45MDA0IDUzNC40IDQ5LjMwMDRDNTM5IDUyLjcwMDQgNTQxLjIgNTcuODAwNCA1NDEuMiA2NC40MDA0QzU0MS4yIDcwLjEwMDQgNTM5LjEgNzQuODAwNCA1MzQuOSA3OC40MDA0QzUzMS4yMzMgODEuNDY3MSA1MjYuODY2IDgzLjQzMzcgNTIxLjggODQuMzAwNEw1NDUuOCAxMTQuM1pNNTI1IDc5LjEwMDRDNTI4LjIgNzcuOTY3MSA1MzAuOTMzIDc2LjEwMDQgNTMzLjIgNzMuNTAwNEM1MzUuNDY3IDcwLjk2NzEgNTM2LjYgNjcuOTMzNyA1MzYuNiA2NC40MDA0QzUzNi42IDU5LjIwMDQgNTM0LjggNTUuMzAwNCA1MzEuMiA1Mi44MDA0QzUyNy43IDUwLjIwMDQgNTIyLjIgNDguODAwNCA1MTQuNiA0OC44MDA0SDQ5My4xVjgwLjcwMDRINTE0LjdDNTE4LjMgODAuNzAwNCA1MjEuNzMzIDgwLjE2NzEgNTI1IDc5LjEwMDRaTTM4MS43IDEwNC43TDM4Mi4zIDEwNS4zTDM4MS44IDEwNkwzODEgMTA1LjRMMzgxLjcgMTA0LjdaTTYyMC40IDU0LjEwMDRDNjI3LjEgNjEuMjAwNCA2MzAuNSA2OS45MDA0IDYzMC41IDgwLjEwMDRDNjMwLjUgOTAuNDAwNCA2MjcuMSA5OS4xMDA0IDYyMC4yIDEwNi4xQzYxMy40IDExMy4yIDYwNC45IDExNi44IDU5NC43IDExNi44QzU4NC41IDExNi44IDU3NS45IDExMy4yIDU2OS4xIDEwNi4xQzU2Mi4zNjcgOTguOTY3MSA1NTkgOTAuMzAwNCA1NTkgODAuMTAwNEM1NTkgNjkuOTAwNCA1NjIuNDMzIDYxLjI2NzEgNTY5LjMgNTQuMjAwNEM1NzYuMiA0Ny4wMDA0IDU4NC43IDQzLjQwMDQgNTk0LjcgNDMuNDAwNEM2MDUuMSA0My40MDA0IDYxMy42IDQ3LjAwMDQgNjIwLjQgNTQuMTAwNFpNNjI1LjggODAuMTAwNEM2MjUuOCA3MS4xNjcxIDYyMi44MzMgNjMuNTY3MSA2MTYuOSA1Ny4zMDA0QzYxMC45IDUxLjEwMDQgNjAzLjUgNDcuOTAwNCA1OTQuNyA0Ny45MDA0QzU4NS45IDQ3LjkwMDQgNTc4LjYgNTEuMTAwNCA1NzIuNiA1Ny40MDA0QzU2Ni42IDYzLjczMzcgNTYzLjYgNzEuMzAwNCA1NjMuNiA4MC4xMDA0QzU2My42IDg4LjgzMzcgNTY2LjYzMyA5Ni40MDA0IDU3Mi43IDEwMi44QzU3OC44IDEwOS4yIDU4Ni4xIDExMi4zIDU5NC43IDExMi4zQzYwMy43IDExMi4zIDYxMS4xIDEwOS4yIDYxNyAxMDIuOUM2MjIuODY3IDk2LjU2NzEgNjI1LjggODguOTY3MSA2MjUuOCA4MC4xMDA0WiIgZmlsbD0iIzMwMzQ3NiIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTQ1OC42IDE0Ny42QzQ2MCAxNDkuNCA0NjAuNyAxNTEuNSA0NjAuNyAxNTMuOUM0NjAuNyAxNTQuNTY3IDQ2MC42MzMgMTU1LjMzNCA0NjAuNSAxNTYuMlYxNTYuNUg0NDMuMkM0NDMuNCAxNTguNjM0IDQ0NC4yIDE2MC4zIDQ0NS42IDE2MS41QzQ0Ny4wNjYgMTYyLjc2NyA0NDkgMTYzLjQgNDUxLjQgMTYzLjRDNDUyLjUzMyAxNjMuNCA0NTMuNjY2IDE2My4xIDQ1NC44IDE2Mi41QzQ1NS45MzMgMTYxLjkgNDU2LjgzMyAxNjEuMSA0NTcuNSAxNjAuMUw0NTcuNyAxNTkuOEw0NTggMTYwTDQ1OS44IDE2MS42TDQ2MCAxNjEuOEw0NTkuOCAxNjJDNDU4Ljg2NiAxNjMuNDY3IDQ1Ny42MzMgMTY0LjYgNDU2LjEgMTY1LjRDNDU0LjU2NiAxNjYuMiA0NTIuOTMzIDE2Ni42IDQ1MS4yIDE2Ni42QzQ0Ny44IDE2Ni42IDQ0NS4wMzMgMTY1LjU2NyA0NDIuOSAxNjMuNUM0NDAuODMzIDE2MS4zNjcgNDM5LjggMTU4LjYzNCA0MzkuOCAxNTUuM0M0MzkuOCAxNTEuOTY3IDQ0MC44IDE0OS4yNjcgNDQyLjggMTQ3LjJDNDQ0LjggMTQ1LjA2NyA0NDcuNDMzIDE0NCA0NTAuNyAxNDRDNDUxLjMgMTQ0IDQ1Mi4wNjYgMTQ0LjEgNDUzIDE0NC4zQzQ1NS40IDE0NC43NjcgNDU3LjI2NiAxNDUuODY3IDQ1OC42IDE0Ny42Wk00NTcuMiAxNTMuNEM0NTcuMDY2IDE1MS40NjcgNDU2LjQzMyAxNDkuOTY3IDQ1NS4zIDE0OC45QzQ1NC4xNjYgMTQ3Ljc2NyA0NTIuNTY2IDE0Ny4yIDQ1MC41IDE0Ny4yQzQ0OC41IDE0Ny4yIDQ0Ni44MzMgMTQ3LjggNDQ1LjUgMTQ5QzQ0NC4yMzMgMTUwLjEzNCA0NDMuNDY2IDE1MS42IDQ0My4yIDE1My40SDQ1Ny4yWk00NzcgMTM2LjJWMTY2LjJINDczLjdWMTM2LjJINDc3Wk0zOTguOCAxNDYuNEM0MDAuNCAxNDcuOSA0MDEuMSAxNTAuMSA0MDEuMSAxNTIuOVYxNjYuMkgzOTcuOVYxNjMuNEMzOTcuMSAxNjQuMjY3IDM5Ni4xIDE2NC45NjcgMzk0LjkgMTY1LjVDMzkzLjQzMyAxNjYuMTY3IDM5MS45IDE2Ni41IDM5MC4zIDE2Ni41QzM4OC4xNjYgMTY2LjUgMzg2LjMgMTY1Ljk2NyAzODQuNyAxNjQuOUMzODMuMTY2IDE2My43IDM4Mi40IDE2Mi4wNjcgMzgyLjQgMTYwQzM4Mi40IDE1Ny43MzQgMzgzLjMgMTU2LjAzNCAzODUuMSAxNTQuOUMzODYuOSAxNTMuNzY3IDM4OS41IDE1My4yMzQgMzkyLjkgMTUzLjNDMzk0Ljc2NiAxNTMuMyAzOTYuNDMzIDE1My40NjcgMzk3LjkgMTUzLjhDMzk3LjgzMyAxNTEuNjY3IDM5Ny4zNjYgMTUwLjA2NyAzOTYuNSAxNDlDMzk1LjYgMTQ3LjkgMzk0LjEgMTQ3LjMgMzkxLjkgMTQ3LjNDMzg5Ljc2NiAxNDcuMyAzODcuNyAxNDguMSAzODUuNyAxNDkuN0wzODUuNCAxNDkuOUwzODUuMiAxNDkuNkwzODMuOCAxNDcuNkwzODQuMSAxNDcuNEwzODMuOSAxNDcuMUMzODQuOSAxNDYuMTY3IDM4Ni4xNjYgMTQ1LjQzNCAzODcuNyAxNDQuOUMzODkuMjMzIDE0NC4zNjcgMzkwLjczMyAxNDQuMSAzOTIuMiAxNDQuMUMzOTUgMTQ0LjEgMzk3LjMgMTQ0LjggMzk4LjggMTQ2LjRaTTQzMC45IDE0NC42TDQzMC43IDE0NS4xTDQyMS4yIDE2Nkw0MjEuMSAxNjYuMkg0MTguOUw0MTguOCAxNjYuMUw0MDguOSAxNDUuMUw0MDguNyAxNDQuNkg0MTIuNUw0MTIuNiAxNDQuOEw0MjAuMSAxNjFMNDI3LjMgMTQ0LjhMNDI3LjQgMTQ0LjZINDMwLjlaTTM3Mi40IDE0Ni4yTDM3Mi42IDE0Ni40TDM3Mi40IDE0Ni42TDM3MC42IDE0OC40TDM3MC4zIDE0OC42TDM3MC4xIDE0OC40QzM2OS41IDE0Ny43IDM2OC43IDE0Ny4zIDM2Ny42IDE0Ny4zQzM2Ni42IDE0Ny4zIDM2NS43MzMgMTQ3LjY2NyAzNjUgMTQ4LjRDMzY0LjI2NiAxNDkuMTM0IDM2My43NjYgMTUwLjAzNCAzNjMuNSAxNTEuMVYxNjYuMkgzNjAuMlYxNDQuNkgzNjMuNVYxNDUuOUMzNjMuOSAxNDUuNDM0IDM2NC4zNjYgMTQ1LjA2NyAzNjQuOSAxNDQuOEMzNjUuOSAxNDQuNCAzNjYuOSAxNDQuMTY3IDM2Ny45IDE0NC4xQzM2OS43NjYgMTQ0LjEgMzcxLjI2NiAxNDQuOCAzNzIuNCAxNDYuMlpNMzg0LjEgMTQ3LjRMMzgzLjggMTQ3LjZMMzgzLjcgMTQ3LjNMMzgzLjkgMTQ3LjFMMzg0LjEgMTQ3LjRaTTM5Ny44IDE1Ni45QzM5Ni42NjYgMTU2LjUgMzk1LjE2NiAxNTYuMyAzOTMuMyAxNTYuM0MzOTAuNyAxNTYuMyAzODguNzY2IDE1Ni42IDM4Ny41IDE1Ny4yQzM4Ni45IDE1Ny41MzQgMzg2LjQ2NiAxNTcuOSAzODYuMiAxNTguM0MzODUuOTMzIDE1OC43NjcgMzg1LjggMTU5LjI2NyAzODUuOCAxNTkuOEMzODUuOCAxNjEuMDY3IDM4Ni4zIDE2MiAzODcuMyAxNjIuNkMzODguMzY2IDE2My4yIDM4OS42IDE2My41IDM5MSAxNjMuNUMzOTIuNCAxNjMuNSAzOTMuNzMzIDE2My4wNjcgMzk1IDE2Mi4yTDM5NS4yIDE2Mi40VjE2Mi41TDM5NSAxNjIuMkMzOTYuMzMzIDE2MS4zMzQgMzk3LjI2NiAxNjAuMyAzOTcuOCAxNTkuMVYxNTYuOVpNMzQ4LjcgMTYzLjNMMzQ4LjkgMTYzLjVMMzQ4LjcgMTYzLjdDMzQ4LjEgMTY0LjU2NyAzNDcuMjY2IDE2NS4yNjcgMzQ2LjIgMTY1LjhDMzQ1LjA2NiAxNjYuMjY3IDM0My45NjYgMTY2LjUgMzQyLjkgMTY2LjVDMzQwLjYgMTY2LjUgMzM4LjggMTY1LjcgMzM3LjggMTY0LjFDMzM2LjggMTYyLjU2NyAzMzYuMyAxNjAuNTY3IDMzNi4zIDE1OC4xVjE0Ny44SDMzMi4xVjE0NC42SDMzNi4zVjEzOS45SDMzOS42VjE0NC42SDM0N1YxNDcuOEgzMzkuNlYxNTcuNUMzMzkuNiAxNTguMzY3IDMzOS42MzMgMTU5LjEgMzM5LjcgMTU5LjdDMzM5Ljc2NiAxNjAuMyAzMzkuOTMzIDE2MC45MzQgMzQwLjIgMTYxLjZDMzQwLjQ2NiAxNjIuMiAzNDAuODMzIDE2Mi42MzQgMzQxLjMgMTYyLjlDMzQxLjgzMyAxNjMuMjM0IDM0Mi41MzMgMTYzLjQgMzQzLjQgMTYzLjRDMzQ0LjUgMTYzLjQgMzQ1LjYgMTYyLjggMzQ2LjYgMTYxLjdMMzQ2LjggMTYxLjRMMzQ3LjEgMTYxLjdMMzQ4LjcgMTYzLjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTE5LjYgMjcuM0MxMTkuNiAxMi42IDEzOCAxLjIgMTM4LjggMC44MDAwMDNMMTQwIDBMMTQxLjIgMC44MDAwMDNDMTQyIDEuMiAxNjAuNCAxMi42IDE2MC40IDI3LjNDMTYwLjQgNDIuMSAxNDIgNTMuNSAxNDEuMiA1My45TDE0MCA1NC43TDEzOC44IDUzLjlDMTM4IDUzLjUgMTE5LjYgNDIuMSAxMTkuNiAyNy4zWk0xMjQuNCAyNy4zQzEyNC40IDM3LjUgMTM2LjEgNDYuNCAxNDAgNDkuMUMxNDMuOSA0Ni40IDE1NS42IDM3LjQgMTU1LjYgMjcuM0MxNTUuNiAxNy4yIDE0My45IDguMzAwMDEgMTQwIDUuNjAwMDFDMTM2LjEgOC4zMDAwMSAxMjQuNCAxNy4yIDEyNC40IDI3LjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGQ9Ik0xNDYuOCAxMDkuMkMxNjguMyA3OC4yOTk2IDE5MC42IDQ2LjI5OTYgMjE3LjMgNDYuMjk5NkMyMTcuMyA0My41OTk2IDIxNSA0MS40OTk2IDIxMi4zIDQxLjg5OTZDMTg1LjQgNDUuMzk5NiAxNjMuOCA3Ni4zOTk2IDE0Mi45IDEwNi41QzE0MS45IDEwNy45IDE0MC45MzMgMTA5LjI2NiAxNDAgMTEwLjZDMTM5LjA2NyAxMDkuMjY2IDEzOC4xIDEwNy45IDEzNy4xIDEwNi41QzExNi4yIDc2LjQ5OTYgOTQuNiA0NS4zOTk2IDY3LjcgNDEuODk5NkM2NS4xIDQxLjQ5OTYgNjIuNyA0My41OTk2IDYyLjcgNDYuMjk5NkM4OS4zOTk5IDQ2LjI5OTYgMTExLjcgNzguMjk5NiAxMzMuMiAxMDkuMkMxMzQuNTMzIDExMS4wNjYgMTM1LjgzMyAxMTIuOTMzIDEzNy4xIDExNC44QzEyOC44IDEyNi41IDEyMC44IDEzNy40IDExMi41IDE0NkMxMDYuMSAxMzguMyA5OS45OTk4IDEyOC44IDkzLjc5OTggMTE5Qzg1LjI5OTggMTA1LjcgNzYuNTk5OSA5MS45OTk2IDY2LjM5OTkgODEuNDk5NkM1NS45OTk5IDcwLjg5OTYgNDUuNSA2NS4wOTk2IDM0LjIgNjMuNjk5NkMzMS41IDYzLjM5OTYgMjkuMDk5OSA2NS40OTk2IDI5LjA5OTkgNjguMTk5NkM1NS43OTk5IDY4LjE5OTYgNzMuMDk5OCA5NS4yOTk2IDg5Ljc5OTggMTIxLjVDOTYuMTk5OCAxMzEuNiAxMDIuNCAxNDEuNCAxMDkuMSAxNDkuNEM5OS4zOTk5IDE1OC42IDkwLjQ5OTkgMTYzLjEgODEuODk5OSAxNjMuMUM2Ni41OTk5IDE2My4xIDU3LjE5OTggMTQ2LjkgNDcuMjk5OCAxMjkuN0M0MS41OTk4IDExOS44IDM1LjggMTA5LjcgMjguNSAxMDEuOUMyMS4zIDk0LjM5OTYgMTMuNTk5OSA5MC4wOTk2IDUuMDk5ODUgODguODk5NkMzLjc5OTg1IDg4Ljc5OTYgMi40OTk4NSA4OS4xOTk2IDEuNTk5ODUgODkuOTk5NkMwLjU5OTg1NCA5MC43OTk2IDAgOTEuOTk5NiAwIDkzLjI5OTZDMjAuOSA5My4yOTk2IDMyLjIgMTEzIDQzLjIgMTMyQzQ4LjQgMTQxLjIgNTMuMzk5OSAxNDkuOCA1OS4zOTk5IDE1Ni40QzY2LjI5OTkgMTY0LjIgNzMuNjk5OSAxNjcuOSA4MS44OTk5IDE2Ny45Qzg3Ljc5OTkgMTY3LjkgOTMuNyAxNjYuMSA5OS43IDE2Mi43QzEwNC45IDE1OS42IDExMC4zIDE1NS4zIDExNiAxNDkuM0MxMjYuNCAxMzguNSAxMzYuMyAxMjQuMyAxNDYuOCAxMDkuMloiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI1MC44IDY4LjIwMDVDMjUwLjggNjUuNTAwNSAyNDguNSA2My40MDA1IDI0NS44IDYzLjcwMDVDMjM0LjUgNjUuMTAwNSAyMjQgNzAuOTAwNCAyMTMuNiA4MS41MDA0QzIwMy40IDkyLjAwMDQgMTk0LjcgMTA1LjcgMTg2LjIgMTE5QzE4MCAxMjguOCAxNzMuOSAxMzguMyAxNjcuNSAxNDZDMTYwLjMgMTM4LjYgMTUzLjQgMTI5LjUgMTQ2LjMgMTE5LjZDMTQ1LjMgMTIxIDE0NC4zMzMgMTIyLjMzNCAxNDMuNCAxMjMuNkMxNTAuMiAxMzMuMiAxNTcgMTQyIDE2NC4xIDE0OS4zQzE2NC4xNjcgMTQ5LjQzNCAxNjQuMjY3IDE0OS41NjcgMTY0LjQgMTQ5LjdDMTU2LjkgMTU3LjggMTQ5IDE2My4xIDE0MCAxNjMuMUMxMzIuNSAxNjMuMSAxMjUuNyAxNTkuNCAxMTkuMyAxNTMuM0MxMTguMDMzIDE1NC42MzQgMTE2LjkzMyAxNTUuOCAxMTYgMTU2LjhDMTIzLjIgMTYzLjYgMTMxIDE2Ny45IDE0MCAxNjcuOUMxNjAuNyAxNjcuOSAxNzUuMSAxNDUuNCAxOTAuMiAxMjEuNUMyMDYuOSA5NS4zMDA0IDIyNC4yIDY4LjIwMDUgMjUwLjggNjguMjAwNVoiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI3NC45IDg4Ljg5OTZDMjY2LjMgOTAuMDk5NiAyNTguNiA5NC4zOTk2IDI1MS41IDEwMS45QzI0NC4yIDEwOS43IDIzOC4zIDExOS45IDIzMi43IDEyOS43QzIyMi44IDE0Ni45IDIxMy40IDE2My4xIDE5OC4xIDE2My4xQzE5MSAxNjMuMSAxODMuNyAxNjAgMTc1LjkgMTUzLjhMMTcyLjkgMTU3LjVDMTc1LjQgMTU5LjUgMTc3LjkgMTYxLjMgMTgwLjMgMTYyLjdDMTg2LjMgMTY2LjEgMTkyLjIgMTY3LjkgMTk4LjEgMTY3LjlDMjA2LjMgMTY3LjkgMjEzLjcgMTY0LjEgMjIwLjYgMTU2LjRDMjI2LjYgMTQ5LjggMjMxLjYgMTQxLjIgMjM2LjggMTMyQzI0Ny44IDExMyAyNTkuMSA5My4yOTk2IDI3OS45IDkzLjI5OTZDMjc5LjkgOTAuNTk5NiAyNzcuNSA4OC40OTk2IDI3NC45IDg4Ljg5OTZaIiBmaWxsPSIjMzAzNDc2Ii8+Cjwvc3ZnPgo=" style="height:28px;width:auto;">' +
       '</div>' +
       '<div class="summary">' +
         '<div class="sum-item"><div class="sum-num">' + all.length + '</div><div class="sum-label">всего</div></div>' +
@@ -1931,7 +1953,7 @@ function showBuyerCard(buyerId) {
         '<div>' +
           '<div style="font-size:17px;font-weight:500;">' + buyer.name + '</div>' +
           '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + buyer.company + '</div>' +
-          (m.rate > 0 ? '<div style="margin-top:6px;"><span class="match-badge '+(m.rate>=65?'match-gold':m.rate>=40?'match-ok':'match-dim')+'"><span class="match-dot '+(m.rate>=65?'dot-gold':m.rate>=40?'dot-ok':'dot-dim')+'"></span>Match Rate: '+m.rate+'%</span></div>' : '') +
+
         '</div>' +
         (buyer.logo_url ? '<img src="'+buyer.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
       '</div>' +
@@ -1942,7 +1964,7 @@ function showBuyerCard(buyerId) {
         (!buyer.audience && !buyer.services && !buyer.notes ?
           '<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:13px;">Участник ещё не заполнил профиль</div>' : '') +
       '</div>' +
-      (m.reason ? '<div style="margin-top:12px;padding:12px;background:rgba(178,144,106,0.08);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.5;"><b style="color:var(--gold);">Почему этот матч:</b> ' + m.reason + '</div>' : '') +
+
       '<div class="modal-actions">' +
         '<button class="btn btn-outline btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
         '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove();openPropose(\''+buyerId+'\')">Предложить встречу</button>' +
@@ -2033,6 +2055,49 @@ function uploadParticipantImage(input, userId, type) {
     renderAdminParticipants();
   };
   reader.readAsDataURL(file);
+}
+
+
+
+// ══════════════════════════════════════════════
+// SELLER PROFILE CARD (for buyers to view)
+// ══════════════════════════════════════════════
+function showSellerCard(sellerId) {
+  const seller = allSellers.find(function(s){ return s.id === sellerId; });
+  if (!seller) return;
+  const initials = (seller.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+
+  const div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:440px;">' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:18px;color:var(--gold);flex-shrink:0;overflow:hidden;">' +
+          (seller.avatar_url ? '<img src="'+seller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:17px;font-weight:500;">' + seller.name + '</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + seller.company + '</div>' +
+        '</div>' +
+        (seller.logo_url ? '<img src="'+seller.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
+      '</div>' +
+      '<div class="profile-block">' +
+        (seller.directions&&seller.directions.length ? '<div class="profile-row"><span class="profile-key">Направления</span><span class="profile-val">' + seller.directions.map(function(d){return '<span class="tag">'+d+'</span>';}).join(' ') + '</span></div>' : '') +
+        (seller.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">'+seller.audience+'</span></div>' : '') +
+        (seller.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">'+seller.services+'</span></div>' : '') +
+        (seller.utp ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">'+seller.utp+'</span></div>' : '') +
+        (seller.notes ? '<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">'+seller.notes+'</span></div>' : '') +
+        (!seller.directions&&!seller.audience&&!seller.utp ?
+          '<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:13px;">Участник ещё не заполнил профиль</div>' : '') +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
+      '</div>' +
+    '</div>';
+
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
 }
 
 
