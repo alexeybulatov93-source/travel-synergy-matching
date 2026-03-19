@@ -365,42 +365,45 @@
     .slot-grid { grid-template-columns: repeat(3,1fr); }
     .main { padding: 12px; }
     .modal { padding: 18px; width: 95vw !important; }
-    .header { padding: 0 14px; height: 52px; }
+    /* Header: fix bell clinging to logo */
+    .header { padding: 0 12px; height: 52px; gap: 8px; }
+    .header-right { gap: 8px; }
     .logo-label { display: none; }
-    .logo img { height: 26px !important; }
-    .user-pill { padding: 5px 10px 5px 6px; font-size: 12px; }
-    .btn-logout { padding: 5px 10px; font-size: 12px; }
+    .logo img { height: 24px !important; }
+    .logo { gap: 8px; }
+    #notifBell { margin-left: auto; display: flex; align-items: center; }
+    .user-pill { padding: 4px 8px 4px 6px; font-size: 11px; gap: 5px; }
+    .btn-logout { padding: 5px 10px; font-size: 11px; }
     .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0; flex-wrap: nowrap; }
-    .tab { white-space: nowrap; font-size: 12px; padding: 10px 14px; }
-    .buyer-item { flex-wrap: wrap; gap: 10px; }
+    .tab { white-space: nowrap; font-size: 12px; padding: 10px 12px; }
+    .buyer-item { flex-wrap: wrap; gap: 8px; }
     .buyer-right { width: 100%; justify-content: flex-end; }
     .schedule-item { flex-wrap: wrap; }
     .section-title { font-size: 13px; }
-    /* Admin create form stacks on mobile */
-    #tabAdmin [style*="grid-template-columns:1fr 1fr 1fr auto"] {
-      display: flex !important; flex-direction: column; gap: 10px;
-    }
+    /* Admin create form — stack vertically on mobile */
+    .admin-create-form { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+    .admin-create-form .form-group { margin: 0; }
     /* Profile grid stacks on mobile */
-    #profileContent > div {
-      grid-template-columns: 1fr !important;
-    }
+    #profileContent > div { grid-template-columns: 1fr !important; }
     /* Matrix scrolls horizontally */
     .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     /* Login box */
     .login-box { width: 92vw; padding: 28px 20px; }
+    /* Password eye button — no outline/shadow glitch */
+    #eyeBtn { outline: none !important; box-shadow: none !important; -webkit-tap-highlight-color: transparent; }
+    #eyeBtn:focus { outline: none !important; box-shadow: none !important; }
     /* Stats */
     #adminStats { grid-template-columns: 1fr 1fr 1fr !important; }
-    .stat-num { font-size: 24px; }
+    .stat-num { font-size: 22px; }
     /* Modal actions stack */
     .modal-actions { flex-wrap: wrap; }
     .modal-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
-    /* Notif bell area */
-    #notifBell { font-size: 16px; }
   }
   @media (max-width: 400px) {
     .slot-grid { grid-template-columns: repeat(2,1fr); }
     #adminStats { grid-template-columns: 1fr !important; }
     .stat-box { padding: 12px; }
+    .stat-num { font-size: 18px; }
   }
 </style>
 </head>
@@ -423,7 +426,7 @@
       <div style="position:relative;">
         <input id="loginPass" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px;">
         <button type="button" onclick="togglePass()" id="eyeBtn"
-          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:var(--text-dim);transition:color .2s;"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;outline:none;box-shadow:none;cursor:pointer;padding:4px;color:var(--text-dim);transition:color .2s;-webkit-tap-highlight-color:transparent;"
           onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-dim)'">
           <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -506,7 +509,7 @@
       <!-- Create participant -->
       <div class="card" style="margin-bottom:20px;">
         <div class="card-title">Добавить участника</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
+        <div class="admin-create-form" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">Название компании</label>
             <input id="newCompany" type="text" class="form-input" placeholder="Maldives Pro"
@@ -523,7 +526,7 @@
               <option value="buyer">Байер</option>
             </select>
           </div>
-          <button class="btn btn-gold" onclick="createParticipant()" style="white-space:nowrap;">
+          <button class="btn btn-gold" onclick="createParticipant()" style="white-space:nowrap;height:42px;align-self:end;">
             + Создать
           </button>
         </div>
@@ -1005,7 +1008,7 @@ async function renderAdmin() {
   html += '</tr></thead><tbody>';
 
   sellers.forEach(s => {
-    html += `<tr><td><b>${s.name}</b><br><small style="color:var(--text-dim)">${s.company}</small></td>`;
+    html += `<tr><td><b>${s.company}</b><br><small style="color:var(--text-dim)">${s.name}</small></td>`;
     buyers.forEach(b => {
       const m = all.find(mt =>
         (mt.seller_id === s.id || mt.seller?.id === s.id) &&
@@ -1267,27 +1270,46 @@ function previewLogin(company) {
   preview.style.display = 'block';
 }
 
-async function createParticipant() {
-  const company = document.getElementById('newCompany').value.trim();
-  const name    = document.getElementById('newName').value.trim();
-  const role    = document.getElementById('newRole').value;
-  if (!company || !name) { toast('Заполни название компании и имя'); return; }
-  const login = generateLogin(company);
-  const pass  = _generatedPass || generatePassword();
-  const { data: existing } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
-  const finalLogin = (existing && existing.length) ? login + Math.floor(Math.random()*8+1) : login;
-  const { error } = await sb.from('users').insert({
-    login: finalLogin, password_hash: pass, role, name, company,
-    event_id: EVENT_ID, profile_ready: false,
-  });
-  if (error) { toast('Ошибка: ' + error.message); return; }
-  showCredentials(finalLogin, pass, name, company, role);
-  document.getElementById('newCompany').value = '';
-  document.getElementById('newName').value = '';
-  document.getElementById('loginPreview').style.display = 'none';
-  _generatedPass = '';
-  await loadUsers();
-  renderAdmin();
+function showCredentials(login, pass, name, company, role) {
+  const roleLabel = role === 'seller' ? 'Селлер' : 'Байер';
+  const copyText = 'Логин: ' + login + '\nПароль: ' + pass;
+  const div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.style.display = 'flex';
+  const inner = document.createElement('div');
+  inner.className = 'modal';
+  inner.style.cssText = 'width:420px;text-align:center;';
+  inner.innerHTML =
+    '<div style="font-size:32px;margin-bottom:8px;">✓</div>' +
+    '<div class="modal-title" style="text-align:center;margin-bottom:16px;">Участник создан!</div>' +
+    '<div style="background:rgba(26,29,74,0.8);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">' +
+      '<div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">' + name + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">' + company + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">' + roleLabel + '</span></div>' +
+      '<div class="divider"></div>' +
+      '<div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold);">' + login + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Пароль</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold-lt);">' + pass + '</span></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--warn);margin-bottom:16px;">⚠ Скопируй и отправь участнику — пароль показывается один раз</div>';
+  const btnCopy = document.createElement('button');
+  btnCopy.className = 'btn btn-gold';
+  btnCopy.style.cssText = 'width:100%;justify-content:center;margin-bottom:8px;';
+  btnCopy.textContent = 'Скопировать данные';
+  btnCopy.onclick = function() {
+    navigator.clipboard.writeText(copyText);
+    btnCopy.textContent = '✓ Скопировано!';
+    setTimeout(function(){ btnCopy.textContent = 'Скопировать данные'; }, 2000);
+  };
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-outline';
+  btnClose.style.cssText = 'width:100%;justify-content:center;';
+  btnClose.textContent = 'Закрыть';
+  btnClose.onclick = function() { div.remove(); };
+  inner.appendChild(btnCopy);
+  inner.appendChild(btnClose);
+  div.appendChild(inner);
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
 }
 
 function showCredentials(login, pass, name, company, role) {
@@ -1518,6 +1540,223 @@ function updateHeaderAvatar() {
     img.style.cssText = 'width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:4px;';
     pill.parentNode.insertBefore(img, pill);
   }
+}
+
+
+
+// ══════════════════════════════════════════════
+// ADMIN: PARTICIPANTS v2
+// filter + edit + multi-user per company + show password
+// ══════════════════════════════════════════════
+
+let participantFilter = 'all'; // 'all' | 'seller' | 'buyer'
+
+async function renderAdminParticipants() {
+  const el = document.getElementById('adminParticipants');
+  if (!el) return;
+
+  // Load full user list including password for admin
+  const { data: allUsers } = await sb.from('users')
+    .select('*').eq('event_id', EVENT_ID)
+    .neq('role','admin').order('role').order('company');
+
+  if (!allUsers || !allUsers.length) { el.innerHTML = '<div class="empty">Нет участников</div>'; return; }
+
+  const filtered = participantFilter === 'all' ? allUsers : allUsers.filter(u => u.role === participantFilter);
+
+  // Filter bar
+  const filterBar =
+    '<div style="display:flex;gap:6px;margin-bottom:14px;">' +
+      '<button class="btn btn-sm ' + (participantFilter==='all' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(\'all\')">Все (' + allUsers.length + ')</button>' +
+      '<button class="btn btn-sm ' + (participantFilter==='seller' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(\'seller\')">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>' +
+        'Селлеры (' + allUsers.filter(u=>u.role==='seller').length + ')' +
+      '</button>' +
+      '<button class="btn btn-sm ' + (participantFilter==='buyer' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(\'buyer\')">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:4px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
+        'Байеры (' + allUsers.filter(u=>u.role==='buyer').length + ')' +
+      '</button>' +
+    '</div>';
+
+  const rows = filtered.map(function(u) {
+    const initials = u.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    const roleCls  = u.role === 'seller' ? 'role-seller' : 'role-buyer';
+    const roleLabel= u.role === 'seller' ? 'SELLER' : 'БАЙЕР';
+    const avatarBg = u.role === 'buyer' ? 'background:rgba(76,175,130,0.15);color:var(--ok);' : '';
+    const avatarHtml = u.avatar_url
+      ? '<img src="' + u.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : initials;
+
+    // Count siblings from same company
+    const siblings = allUsers.filter(function(x){ return x.company === u.company && x.id !== u.id; }).length;
+
+    return '<div class="buyer-item" style="cursor:default;">' +
+      '<div class="buyer-info">' +
+        '<div class="buyer-avatar" style="' + avatarBg + '">' + avatarHtml + '</div>' +
+        '<div>' +
+          '<div class="buyer-name">' + u.name + ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
+          (siblings > 0 ? ' <span style="font-size:10px;color:var(--text-dim);">+' + siblings + ' из компании</span>' : '') +
+          '</div>' +
+          '<div class="buyer-company">' + u.company + ' · логин: <span style="font-family:monospace;color:var(--gold);">' + u.login + '</span>' +
+          ' · пароль: <span id="pwd_' + u.id + '" style="font-family:monospace;color:var(--text-dim);cursor:pointer;" onclick="togglePwdView(\'' + u.id + '\',\'' + u.password_hash.replace(/'/g,"\\'") + '\')" title="Нажми чтобы показать">••••••••</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="openEditParticipant(\'' + u.id + '\')" title="Редактировать">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+        '</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteParticipant(\'' + u.id + '\',\'' + u.name.replace(/'/g,"\\'") + '\')" title="Удалить">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = filterBar + rows;
+}
+
+function setFilter(f) {
+  participantFilter = f;
+  renderAdminParticipants();
+}
+
+// Show/hide password inline
+function togglePwdView(userId, pwd) {
+  const el = document.getElementById('pwd_' + userId);
+  if (!el) return;
+  if (el.dataset.showing === '1') {
+    el.textContent = '••••••••';
+    el.dataset.showing = '0';
+    el.style.color = 'var(--text-dim)';
+  } else {
+    el.textContent = pwd;
+    el.dataset.showing = '1';
+    el.style.color = 'var(--gold-lt)';
+  }
+}
+
+// ── EDIT PARTICIPANT MODAL ──
+let _editUserId = null;
+
+async function openEditParticipant(userId) {
+  const { data: u } = await sb.from('users').select('*').eq('id', userId).single();
+  if (!u) return;
+  _editUserId = userId;
+
+  // Count siblings (same company, same event)
+  const { data: siblings } = await sb.from('users')
+    .select('id').eq('company', u.company).eq('event_id', EVENT_ID).neq('id', userId).neq('role','admin');
+  const sibCount = siblings ? siblings.length : 0;
+
+  const div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.id = 'modalEditParticipant';
+  div.style.display = 'flex';
+
+  const isSeller = u.role === 'seller';
+  div.innerHTML =
+    '<div class="modal" style="width:520px;max-height:90vh;overflow-y:auto;">' +
+      '<div class="modal-title">Редактировать участника</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">Имя</label><input id="ep_name" class="form-input" value="' + escHtml(u.name) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Компания</label><input id="ep_company" class="form-input" value="' + escHtml(u.company) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Логин</label><input id="ep_login" class="form-input" value="' + escHtml(u.login) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Пароль (новый, или оставь пустым)</label><input id="ep_pass" class="form-input" placeholder="не менять"></div>' +
+        '<div class="form-group"><label class="form-label">Роль</label>' +
+          '<select id="ep_role" class="form-input">' +
+            '<option value="seller"' + (u.role==='seller'?' selected':'') + '>Селлер</option>' +
+            '<option value="buyer"' + (u.role==='buyer'?' selected':'') + '>Байер</option>' +
+          '</select></div>' +
+        '<div class="form-group"><label class="form-label">Telegram ID</label><input id="ep_tg" class="form-input" value="' + escHtml(u.telegram_id||'') + '" placeholder="@username"></div>' +
+      '</div>' +
+      (isSeller ?
+        '<div class="divider"></div>' +
+        '<div class="form-group"><label class="form-label">Направления (через запятую)</label><input id="ep_dir" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Целевая аудитория</label><input id="ep_aud" class="form-input" value="' + escHtml(u.audience||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Ключевые услуги</label><input id="ep_srv" class="form-input" value="' + escHtml(u.services||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">УТП</label><textarea id="ep_utp" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>' +
+        '<div class="form-group"><label class="form-label">Заметки для партнёров</label><textarea id="ep_notes" class="form-input">' + escHtml(u.notes||'') + '</textarea></div>'
+      : '') +
+      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:12px;">' +
+        'Участников от этой компании: <b style="color:var(--gold);">' + (sibCount+1) + '</b>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalEditParticipant\').remove()">Отмена</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="saveEditParticipant()">Сохранить</button>' +
+      '</div>' +
+    '</div>';
+
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
+}
+
+async function saveEditParticipant() {
+  const updates = {
+    name:    document.getElementById('ep_name').value.trim(),
+    company: document.getElementById('ep_company').value.trim(),
+    login:   document.getElementById('ep_login').value.trim().toLowerCase(),
+    role:    document.getElementById('ep_role').value,
+    telegram_id: document.getElementById('ep_tg').value.trim(),
+  };
+  const newPass = document.getElementById('ep_pass').value.trim();
+  if (newPass) updates.password_hash = newPass;
+
+  const role = updates.role;
+  if (role === 'seller') {
+    const dir = document.getElementById('ep_dir').value;
+    updates.directions = dir ? dir.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
+    updates.audience = document.getElementById('ep_aud').value.trim();
+    updates.services = document.getElementById('ep_srv').value.trim();
+    updates.utp      = document.getElementById('ep_utp').value.trim();
+    updates.notes    = document.getElementById('ep_notes').value.trim();
+    updates.profile_ready = !!(updates.directions.length && updates.utp);
+  }
+
+  const { error } = await sb.from('users').update(updates).eq('id', _editUserId);
+  if (error) { toast('Ошибка: ' + error.message); return; }
+
+  document.getElementById('modalEditParticipant').remove();
+  await loadUsers();
+  renderAdmin();
+  toast('Участник обновлён ✓');
+}
+
+// ── MULTI-USER: check company limit ──
+// Sellers: max 2 per company unless admin override
+async function createParticipant() {
+  const company = document.getElementById('newCompany').value.trim();
+  const name    = document.getElementById('newName').value.trim();
+  const role    = document.getElementById('newRole').value;
+  if (!company || !name) { toast('Заполни название компании и имя'); return; }
+
+  // Check company limit for sellers (2 per company)
+  if (role === 'seller') {
+    const { data: existing } = await sb.from('users')
+      .select('id').eq('company', company).eq('event_id', EVENT_ID).eq('role','seller');
+    if (existing && existing.length >= 2) {
+      if (!confirm('От компании "' + company + '" уже ' + existing.length + ' участника. Как организатор вы можете добавить ещё. Продолжить?')) return;
+    }
+  }
+
+  const login = generateLogin(company);
+  const pass  = _generatedPass || generatePassword();
+  const { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
+  const finalLogin = (dup && dup.length) ? login + Math.floor(Math.random()*8+2) : login;
+
+  const { error } = await sb.from('users').insert({
+    login: finalLogin, password_hash: pass, role, name, company,
+    event_id: EVENT_ID, profile_ready: false,
+  });
+  if (error) { toast('Ошибка: ' + error.message); return; }
+
+  showCredentials(finalLogin, pass, name, company, role);
+  document.getElementById('newCompany').value = '';
+  document.getElementById('newName').value = '';
+  document.getElementById('loginPreview').style.display = 'none';
+  _generatedPass = '';
+  await loadUsers();
+  renderAdmin();
 }
 
 
