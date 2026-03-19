@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Synergy · Corona Travel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600&family=Onest:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a1d4a;
+    --navy-d: #131647;
+    --navy-b: #303672;
+    --gold: #B2906A;
+    --gold-lt: #C8A97E;
+    --gold-pale: #F6E0CB;
+    --text: #e8eaf6;
+    --text-dim: #9095c0;
+    --card: rgba(48,54,114,0.35);
+    --card-border: rgba(178,144,106,0.18);
+    --ok: #4caf82;
+    --warn: #e8a040;
+    --danger: #e05a5a;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Onest', sans-serif;
+    background: var(--navy-d);
+    color: var(--text);
+    min-height: 100vh;
+    font-weight: 300;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--navy-d); }
+  ::-webkit-scrollbar-thumb { background: var(--navy-b); border-radius: 2px; }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .header {
+    background: var(--navy);
+    border-bottom: 1px solid var(--card-border);
+    padding: 0 24px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo img { height: 32px; width: auto; filter: drop-shadow(0 0 8px rgba(178,144,106,0.25)); }
+  .logo-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    line-height: 1.3;
+  }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 40px;
+    padding: 6px 14px 6px 8px;
+    font-size: 13px;
+  }
+  .role-badge {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .role-seller { background: rgba(178,144,106,0.2); color: var(--gold); }
+  .role-buyer  { background: rgba(76,175,130,0.2); color: var(--ok); }
+  .role-admin  { background: rgba(224,90,90,0.15); color: var(--danger); }
+
+  .btn-logout {
+    background: none; border: 1px solid var(--card-border);
+    color: var(--text-dim); border-radius: 8px;
+    padding: 6px 14px; cursor: pointer; font-size: 13px;
+    font-family: 'Onest', sans-serif;
+    transition: all .2s;
+  }
+  .btn-logout:hover { border-color: var(--gold); color: var(--gold); }
+
+  .main { flex: 1; padding: 28px 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--card-border); padding-bottom: 0; }
+  .tab {
+    font-family: 'Onest', sans-serif; font-weight: 400;
+    font-size: 13px; padding: 10px 18px;
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all .2s; margin-bottom: -1px;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px; letter-spacing: 0.04em;
+    color: var(--gold); margin-bottom: 16px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── BUYER LIST ── */
+  .buyer-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(26,29,74,0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: border-color .2s;
+    cursor: default;
+  }
+  .buyer-item:hover { border-color: rgba(178,144,106,0.4); }
+  .buyer-info { display: flex; align-items: center; gap: 12px; }
+  .buyer-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--navy-b);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Unbounded', sans-serif; font-size: 13px; color: var(--gold);
+    flex-shrink: 0;
+  }
+  .buyer-name { font-weight: 500; font-size: 14px; }
+  .buyer-company { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .buyer-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── MATCH RATE ── */
+  .match-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-family: 'Unbounded', sans-serif; font-size: 11px; font-weight: 600;
+  }
+  .match-gold { background: rgba(178,144,106,0.2); color: var(--gold); border: 1px solid rgba(178,144,106,0.4); }
+  .match-ok   { background: rgba(76,175,130,0.15); color: var(--ok);   border: 1px solid rgba(76,175,130,0.3); }
+  .match-dim  { background: rgba(144,149,192,0.1); color: var(--text-dim); border: 1px solid rgba(144,149,192,0.2); }
+  .match-dot  { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-gold { background: var(--gold); }
+  .dot-ok   { background: var(--ok); }
+  .dot-dim  { background: var(--text-dim); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Onest', sans-serif; font-weight: 500;
+    border: none; border-radius: 8px; cursor: pointer;
+    transition: all .2s; font-size: 13px; padding: 8px 16px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-gold { background: var(--gold); color: #fff; }
+  .btn-gold:hover { background: var(--gold-lt); transform: translateY(-1px); }
+  .btn-outline { background: none; border: 1px solid var(--card-border); color: var(--text-dim); }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-ok { background: rgba(76,175,130,0.15); border: 1px solid rgba(76,175,130,0.4); color: var(--ok); }
+  .btn-ok:hover { background: rgba(76,175,130,0.25); }
+  .btn-danger { background: rgba(224,90,90,0.12); border: 1px solid rgba(224,90,90,0.35); color: var(--danger); }
+  .btn-danger:hover { background: rgba(224,90,90,0.22); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* ── SLOT GRID ── */
+  .slot-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .slot-btn {
+    padding: 10px; border-radius: 8px; border: 1px solid var(--card-border);
+    background: rgba(26,29,74,0.5); color: var(--text);
+    font-family: 'Onest', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .slot-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .slot-btn.taken { opacity: 0.35; cursor: not-allowed; background: rgba(0,0,0,0.2); }
+  .slot-btn.mine  { border-color: var(--ok); color: var(--ok); background: rgba(76,175,130,0.1); }
+  .slot-btn.selected { border-color: var(--gold); background: rgba(178,144,106,0.15); color: var(--gold); }
+
+  /* ── SCHEDULE ── */
+  .schedule-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 8px;
+    background: rgba(26,29,74,0.4);
+  }
+  .schedule-time {
+    font-family: 'Unbounded', sans-serif; font-size: 13px;
+    color: var(--gold); min-width: 48px;
+  }
+  .schedule-info { flex: 1; }
+  .schedule-name { font-weight: 500; font-size: 14px; }
+  .schedule-company { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+  .status-badge {
+    font-size: 11px; padding: 3px 9px; border-radius: 20px;
+    font-family: 'Unbounded', sans-serif; letter-spacing: 0.04em;
+  }
+  .status-pending   { background: rgba(232,160,64,0.15); color: var(--warn); }
+  .status-confirmed { background: rgba(76,175,130,0.15); color: var(--ok); }
+  .status-declined  { background: rgba(224,90,90,0.12); color: var(--danger); }
+
+  /* ── NOTIFICATIONS ── */
+  .notif-item {
+    padding: 12px 16px; border-radius: 10px;
+    border: 1px solid var(--card-border); margin-bottom: 8px;
+    background: rgba(26,29,74,0.4);
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-top: 4px; flex-shrink: 0; }
+  .notif-dot.read { background: var(--text-dim); }
+  .notif-text { font-size: 13px; line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+  /* ── FORMS ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; background: rgba(26,29,74,0.7);
+    border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text);
+    font-family: 'Onest', sans-serif; font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  .form-input:focus { border-color: var(--gold); }
+  .form-input::placeholder { color: var(--text-dim); }
+  textarea.form-input { resize: vertical; min-height: 80px; }
+
+  /* ── LOGIN PAGE ── */
+  .login-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--navy-d);
+    background-image: radial-gradient(circle at 20% 50%, rgba(48,54,114,0.4) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(178,144,106,0.1) 0%, transparent 50%);
+  }
+  .login-box {
+    width: 360px; padding: 40px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+  }
+  .login-logo { text-align: center; margin-bottom: 28px; }
+  .login-logo img {
+    height: 40px; width: auto;
+    filter: drop-shadow(0 0 14px rgba(178,144,106,0.4));
+  }
+  .login-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 18px; color: var(--gold);
+    text-align: center; margin-bottom: 6px;
+  }
+  .login-sub { font-size: 13px; color: var(--text-dim); text-align: center; margin-bottom: 28px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,12,40,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; backdrop-filter: blur(4px);
+  }
+  .modal {
+    width: 480px; max-width: 95vw;
+    background: #1e2255;
+    border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 28px;
+  }
+  .modal-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px; color: var(--gold); margin-bottom: 20px;
+  }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── ADMIN MATRIX ── */
+  .matrix-wrap { overflow-x: auto; }
+  .matrix-table { border-collapse: collapse; min-width: 100%; }
+  .matrix-table th, .matrix-table td {
+    border: 1px solid var(--card-border);
+    padding: 8px 12px; font-size: 12px; white-space: nowrap;
+  }
+  .matrix-table th { background: var(--navy-b); color: var(--gold); font-family: 'Unbounded', sans-serif; font-size: 10px; letter-spacing: 0.05em; }
+  .matrix-table td { background: rgba(26,29,74,0.4); }
+  .matrix-cell-ok    { background: rgba(76,175,130,0.18) !important; color: var(--ok); }
+  .matrix-cell-pend  { background: rgba(232,160,64,0.13) !important; color: var(--warn); }
+
+  /* ── STATS ── */
+  .stat-box { text-align: center; padding: 20px; }
+  .stat-num { font-family: 'Unbounded', sans-serif; font-size: 32px; color: var(--gold); }
+  .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── UTILS ── */
+  .page { display: none; }
+  .page.active { display: block; }
+  .section-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 16px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--card-border);
+  }
+  .empty { text-align: center; color: var(--text-dim); padding: 40px; font-size: 14px; }
+  .divider { height: 1px; background: var(--card-border); margin: 20px 0; }
+  .tag {
+    display: inline-block;
+    background: rgba(178,144,106,0.12);
+    border: 1px solid rgba(178,144,106,0.25);
+    color: var(--gold-lt);
+    border-radius: 20px; padding: 2px 10px;
+    font-size: 11px; margin: 2px;
+  }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--navy-b); border: 1px solid var(--gold);
+    color: var(--text); padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; z-index: 999; animation: slideIn .3s ease;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(178,144,106,0.3);
+    border-top-color: var(--gold);
+    border-radius: 50%; animation: spin .7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .notif-count {
+    background: var(--gold); color: #fff;
+    border-radius: 50%; width: 18px; height: 18px;
+    font-size: 10px; font-family: 'Unbounded', sans-serif;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 4px;
+  }
+
+  /* ── MATCH REASON TOOLTIP ── */
+  .reason-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 16px; padding: 2px 4px;
+    transition: color .2s;
+  }
+  .reason-btn:hover { color: var(--gold); }
+
+  /* inline profile block */
+  .profile-block { background: rgba(26,29,74,0.6); border-radius: 10px; padding: 16px; }
+  .profile-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+  .profile-key { font-size: 11px; color: var(--text-dim); min-width: 120px; padding-top: 1px; }
+  .profile-val { font-size: 13px; flex: 1; }
+
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .slot-grid { grid-template-columns: repeat(3,1fr); }
+    .main { padding: 12px; }
+    .modal { padding: 18px; width: 95vw !important; }
+    .header { padding: 0 14px; height: 52px; }
+    .logo-label { display: none; }
+    .logo img { height: 26px !important; }
+    .user-pill { padding: 5px 10px 5px 6px; font-size: 12px; }
+    .btn-logout { padding: 5px 10px; font-size: 12px; }
+    .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 0; flex-wrap: nowrap; }
+    .tab { white-space: nowrap; font-size: 12px; padding: 10px 14px; }
+    .buyer-item { flex-wrap: wrap; gap: 10px; }
+    .buyer-right { width: 100%; justify-content: flex-end; }
+    .schedule-item { flex-wrap: wrap; }
+    .section-title { font-size: 13px; }
+    /* Admin create form stacks on mobile */
+    #tabAdmin [style*="grid-template-columns:1fr 1fr 1fr auto"] {
+      display: flex !important; flex-direction: column; gap: 10px;
+    }
+    /* Matrix scrolls horizontally */
+    .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* Login box */
+    .login-box { width: 92vw; padding: 28px 20px; }
+    /* Stats */
+    #adminStats { grid-template-columns: 1fr 1fr 1fr !important; }
+    .stat-num { font-size: 24px; }
+    /* Modal actions stack */
+    .modal-actions { flex-wrap: wrap; }
+    .modal-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+    /* Notif bell area */
+    #notifBell { font-size: 16px; }
+  }
+  @media (max-width: 400px) {
+    .slot-grid { grid-template-columns: repeat(2,1fr); }
+    #adminStats { grid-template-columns: 1fr !important; }
+    .stat-box { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ LOGIN PAGE ══════════════════ -->
+<div id="loginPage" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDc4MiIgaGVpZ2h0PSIxMDExIiB2aWV3Qm94PSIwIDAgNDc4MiAxMDExIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTIyOTIuNzMgNjMzLjQ5NkwyMjk3LjU0IDYzNy4xMDZDMjI3OS44OSA2NTguNzY0IDIyNTcuNDMgNjc1LjIwOCAyMjMwLjE2IDY4Ni40MzhDMjIwMy4yOSA2OTcuMjY3IDIxNzQuODEgNzAyLjY4MSAyMTQ0LjczIDcwMi42ODFDMjA3Ny45NSA3MDIuNjgxIDIwMjMuODEgNjgyLjIyNiAxOTgyLjkgNjQxLjkxOUMxOTQxLjk5IDYwMS4wMDkgMTkyMi4xNCA1NDcuNDY2IDE5MjIuMTQgNDgxLjg5MUMxOTIyLjE0IDQxNy41MTkgMTk0MS4zOSAzNjQuNTc3IDE5ODEuMDkgMzIzLjY2OEMyMDIwLjggMjgyLjE1NyAyMDcxLjk0IDI2MS4xMDEgMjEzNS4xMSAyNjEuMTAxQzIxNjUuMTkgMjYxLjEwMSAyMTk0LjI2IDI2Ni41MTUgMjIyMi4zNCAyNzcuMzQ0QzIyNTAuODIgMjg3Ljc3MiAyMjc0LjI4IDMwMy44MTUgMjI5Mi43MyAzMjUuNDczTDIyOTUuNzQgMzI5LjA4MkwyMjkyLjczIDMzMy4yOTRMMjI4NC4zMSAzNDMuNTIxTDIyODAuMDkgMzQ3LjczMkwyMjc1Ljg4IDM0NC4xMjNDMjI1Mi4yMiAzMjMuNjY4IDIyMjkuNzYgMzA5LjIyOSAyMjA4LjUgMzAwLjgwN0wyMjEwLjkxIDI5NS4zOTJMMjIxMC4zMSAyOTUuOTk0TDIyMDguNSAzMDAuODA3QzIxODguMDUgMjkyLjM4NCAyMTYyLjk4IDI4OC4xNzMgMjEzMy4zIDI4OC4xNzNDMjA3NS41NSAyODguMTczIDIwMzEuNjMgMzA2LjIyMSAxOTk4LjU0IDM0Mi4zMThDMTk2Ni42NiAzNzguNDE0IDE5NDkuODEgNDI0LjczOCAxOTQ5LjgxIDQ4MS44OTFDMTk0OS44MSA1NDIuMDUyIDE5NjcuODYgNTg4Ljk3NyAyMDAzLjM2IDYyMy4yNjlDMjAzOC44NSA2NTguMTYyIDIwODUuNzggNjc1LjYwOSAyMTQ0LjczIDY3NS42MDlDMjE5OS40OCA2NzUuNjA5IDIyNDQgNjU2Ljk1OSAyMjc5LjQ5IDYyMC4yNjFMMjI4My43IDYxNS40NDhMMjI4Ny45MSA2MjAuMjYxTDIyOTYuOTQgNjI5LjI4NUwyMjkyLjczIDYzMy40OTZaTTQyNzMuODIgMjY2LjUxNVY2OTcuMjY2SDQyNDkuMTZMNDI0Ny4zNSA2OTQuODZMMzk1MS45NiAzMTUuMjQ1VjY5Ny4yNjZIMzkyMy42OVYyNjYuNTE1SDM5NDguOTVMMzk1MC43NiAyNjguOTIyTDQyNDYuMTUgNjQ4LjUzNlYyNjYuNTE1SDQyNzMuODJaTTQ3ODEuNTggNjk3LjI2Nkg0NzUxLjVMNDc0OS43IDY5My42NTdMNDY5MS4zNCA1NjAuNzAySDQ0NjcuNTRMNDQwOS43OSA2OTMuNjU3TDQ0MDcuOTggNjk3LjI2Nkg0Mzc4LjVMNDM4Mi4xMSA2ODguODQ0TDQ1NjUuNiAyNjcuNzE4TDQ1NjYuODEgMjY0LjEwOUg0NTkwLjg3TDQ1OTIuNjggMjY3LjcxOEw0Nzc3Ljk3IDY4OC44NDRMNDc4MS41OCA2OTcuMjY2Wk00Njc5LjkxIDUzMy42MjlMNDU3OC44NCAzMDMuMjEzTDQ0NzkuNTcgNTMzLjYyOUg0Njc5LjkxWk0yODA4LjkxIDQ4MS44OTFDMjgwOC45MSA1NDMuNjU2IDI3ODguMDUgNTk1Ljc5NSAyNzQ2LjM0IDYzOC4zMDlDMjcwNS40MyA2ODEuMDIzIDI2NTQuMjkgNzAyLjY4MSAyNTkzLjUzIDcwMi42ODFDMjUzMS41NyA3MDIuNjgxIDI0NzkuODMgNjgxLjAyMyAyNDM4LjkyIDYzOC4zMDlMMjQ0My4xMyA2MzQuNjk5VjYzNC4wOThMMjQzOC45MiA2MzguMzA5QzIzOTguNDEgNTk1LjM5NCAyMzc4LjE2IDU0My4yNTUgMjM3OC4xNiA0ODEuODkxQzIzNzguMTYgNDIwLjUyNyAyMzk4LjgxIDM2OC41ODggMjQ0MC4xMiAzMjYuMDc0QzI0ODEuNjMgMjgyLjc1OCAyNTMyLjc3IDI2MS4xMDEgMjU5My41MyAyNjEuMTAxQzI2NTUuNSAyNjEuMTAxIDI3MDcuMjQgMjgyLjc1OSAyNzQ3LjU0IDMyNS40NzNDMjc4OC40NSAzNjguMTg3IDI4MDguOTEgNDIwLjUyNyAyODA4LjkxIDQ4MS44OTFaTTI3ODAuNjMgNDgxLjg5MUMyNzgwLjYzIDQyOC4xNDcgMjc2Mi41OCAzODIuNDI1IDI3MjYuNDkgMzQ0LjcyNEMyNjkwLjM5IDMwNi44MjMgMjY0Ni40NyAyODguMTczIDI1OTMuNTMgMjg4LjE3M0MyNTQwLjU5IDI4OC4xNzMgMjQ5Ni4wNyAzMDcuMjI0IDI0NTkuOTcgMzQ1LjMyNkwyNDU1Ljc2IDM0MS4xMTRMMjQ1Ni4zNiAzNDEuNzE2TDI0NTkuOTcgMzQ1LjMyNkMyNDI0LjI4IDM4My40MjggMjQwNi40MyA0MjguOTQ5IDI0MDYuNDMgNDgxLjg5MUMyNDA2LjQzIDUzNC40MzEgMjQyNC40OCA1NzkuOTUzIDI0NjAuNTggNjE4LjQ1NkMyNDk3Ljg4IDY1Ni4zNTcgMjU0MS43OSA2NzUuNjA5IDI1OTMuNTMgNjc1LjYwOUMyNjQ3LjA3IDY3NS42MDkgMjY5MS41OSA2NTYuOTU5IDI3MjcuMDkgNjE5LjA1N0MyNzYyLjc4IDU4MC45NTYgMjc4MC42MyA1MzUuMjMzIDI3ODAuNjMgNDgxLjg5MVpNMzI4My41OCA2ODcuNjQxTDMyOTAuOCA2OTcuMjY2SDMyNTUuOUwzMjU0LjEgNjk0Ljg2TDMxMDguNTEgNTEyLjU3M0gyOTY2LjUzVjY5Ny4yNjZIMjkzOC4yNVYyNjYuNTE1SDMwOTUuODdDMzE0Ny42MSAyNjYuNTE1IDMxODcuOTIgMjc2LjE0MSAzMjE0Ljk5IDI5Ni41OTZDMzI0Mi42NyAzMTcuMDUgMzI1NS45IDM0Ny43MzIgMzI1NS45IDM4Ny40MzhDMzI1NS45IDQyMS43MyAzMjQzLjI3IDQ1MC4wMDYgMzIxOCA0NzEuNjYzQzMxOTUuOTQgNDkwLjExMyAzMTY5LjY3IDUwMS45NDQgMzEzOS4xOSA1MDcuMTU4TDMyODMuNTggNjg3LjY0MVpNMzE1OC40NCA0NzUuODc1QzMxNzcuNjkgNDY5LjA1NyAzMTk0LjE0IDQ1Ny44MjYgMzIwNy43NyA0NDIuMTg1QzMyMjEuNDEgNDI2Ljk0NCAzMjI4LjIzIDQwOC42OTUgMzIyOC4yMyAzODcuNDM4QzMyMjguMjMgMzU2LjE1NSAzMjE3LjQgMzMyLjY5MiAzMTk1Ljc0IDMxNy42NTJDMzE3NC42OSAzMDIuMDEgMzE0MS42IDI5My41ODcgMzA5NS44NyAyOTMuNTg3SDI5NjYuNTNWNDg1LjUwMUgzMDk2LjQ4QzMxMTguMTMgNDg1LjUwMSAzMTM4Ljc5IDQ4Mi4yOTIgMzE1OC40NCA0NzUuODc1Wk0yMjk2LjM0IDYyOS44ODZMMjI5OS45NSA2MzMuNDk2TDIyOTYuOTQgNjM3LjcwN0wyMjkyLjEzIDYzNC4wOThMMjI5Ni4zNCA2MjkuODg2Wk0zNzMyLjM4IDMyNS40NzNDMzc3Mi42OCAzNjguMTg3IDM3OTMuMTQgNDIwLjUyNyAzNzkzLjE0IDQ4MS44OTFDMzc5My4xNCA1NDMuODU2IDM3NzIuNjggNTk2LjE5NiAzNzMxLjE3IDYzOC4zMDlDMzY5MC4yNiA2ODEuMDIzIDM2MzkuMTMgNzAyLjY4MSAzNTc3Ljc2IDcwMi42ODFDMzUxNi40IDcwMi42ODEgMzQ2NC42NiA2ODEuMDIzIDM0MjMuNzUgNjM4LjMwOUMzMzgzLjI0IDU5NS4zOTQgMzM2Mi45OSA1NDMuMjU1IDMzNjIuOTkgNDgxLjg5MUMzMzYyLjk5IDQyMC41MjcgMzM4My42NCAzNjguNTg4IDM0MjQuOTUgMzI2LjA3NEMzNDY2LjQ2IDI4Mi43NTggMzUxNy42IDI2MS4xMDEgMzU3Ny43NiAyNjEuMTAxQzM2NDAuMzMgMjYxLjEwMSAzNjkxLjQ3IDI4Mi43NTkgMzczMi4zOCAzMjUuNDczWk0zNzY0Ljg2IDQ4MS44OTFDMzc2NC44NiA0MjguMTQ3IDM3NDcuMDIgMzgyLjQyNSAzNzExLjMyIDM0NC43MjRDMzY3NS4yMiAzMDcuNDI0IDM2MzAuNyAyODguMTczIDM1NzcuNzYgMjg4LjE3M0MzNTI0LjgyIDI4OC4xNzMgMzQ4MC45IDMwNy40MjQgMzQ0NC44MSAzNDUuMzI2QzM0MDguNzEgMzgzLjQyOCAzMzkwLjY2IDQyOC45NDkgMzM5MC42NiA0ODEuODkxQzMzOTAuNjYgNTM0LjQzMSAzNDA4LjkxIDU3OS45NTMgMzQ0NS40MSA2MTguNDU2QzM0ODIuMTEgNjU2Ljk1OSAzNTI2LjAyIDY3NS42MDkgMzU3Ny43NiA2NzUuNjA5QzM2MzEuOTEgNjc1LjYwOSAzNjc2LjQzIDY1Ni45NTkgMzcxMS45MiA2MTkuMDU3QzM3NDcuMjIgNTgwLjk1NiAzNzY0Ljg2IDUzNS4yMzMgMzc2NC44NiA0ODEuODkxWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yNzU4Ljk3IDg4Ny45NzZDMjc2Ny40IDg5OC44MDUgMjc3MS42MSA5MTEuNDM5IDI3NzEuNjEgOTI1Ljg3N0MyNzcxLjYxIDkyOS44ODggMjc3MS4yMSA5MzQuNSAyNzcwLjQxIDkzOS43MTRWOTQxLjUxOUgyNjY2LjMzQzI2NjcuNTMgOTU0LjM1MyAyNjcyLjM0IDk2NC4zOCAyNjgwLjc2IDk3MS41OTlDMjY4OS41OSA5NzkuMjIgMjcwMS4yMiA5ODMuMDMgMjcxNS42NiA5ODMuMDNDMjcyMi40OCA5ODMuMDMgMjcyOS4yOSA5ODEuMjI1IDI3MzYuMTEgOTc3LjYxNUMyNzQyLjkzIDk3NC4wMDYgMjc0OC4zNSA5NjkuMTkzIDI3NTIuMzYgOTYzLjE3N0wyNzUzLjU2IDk2MS4zNzJMMjc1NS4zNyA5NjIuNTc1TDI3NjYuMTkgOTcyLjIwMUwyNzY3LjQgOTczLjQwNEwyNzY2LjE5IDk3NC42MDdDMjc2MC41OCA5ODMuNDMxIDI3NTMuMTYgOTkwLjI0OSAyNzQzLjkzIDk5NS4wNjJDMjczNC43MSA5OTkuODc1IDI3MjQuODggMTAwMi4yOCAyNzE0LjQ2IDEwMDIuMjhDMjY5NCAxMDAyLjI4IDI2NzcuMzYgOTk2LjA2NSAyNjY0LjUyIDk4My42MzJDMjY1Mi4wOSA5NzAuNzk3IDI2NDUuODcgOTU0LjM1MyAyNjQ1Ljg3IDkzNC4zQzI2NDUuODcgOTE0LjI0NiAyNjUxLjg5IDg5OC4wMDMgMjY2My45MiA4ODUuNTY5QzI2NzUuOTUgODcyLjczNSAyNjkxLjc5IDg2Ni4zMTggMjcxMS40NSA4NjYuMzE4QzI3MTUuMDYgODY2LjMxOCAyNzE5LjY3IDg2Ni45MTkgMjcyNS4yOCA4NjguMTIzQzI3MzkuNzIgODcwLjkzIDI3NTAuOTUgODc3LjU0OCAyNzU4Ljk3IDg4Ny45NzZaTTI3NTAuNTUgOTIyLjg2OUMyNzQ5Ljc1IDkxMS4yMzggMjc0NS45NCA5MDIuMjE0IDI3MzkuMTIgODk1Ljc5N0MyNzMyLjMgODg4Ljk3OCAyNzIyLjY4IDg4NS41NjkgMjcxMC4yNCA4ODUuNTY5QzI2OTguMjEgODg1LjU2OSAyNjg4LjE5IDg4OS4xNzkgMjY4MC4xNiA4OTYuMzk4QzI2NzIuNTQgOTAzLjIxNyAyNjY3LjkzIDkxMi4wNCAyNjY2LjMzIDkyMi44NjlIMjc1MC41NVpNMjg2OS42NyA4MTkuMzkzVjk5OS44NzVIMjg0OS44MlY4MTkuMzkzSDI4NjkuNjdaTTIzOTkuMjEgODgwLjc1NkMyNDA4Ljg0IDg4OS43ODEgMjQxMy4wNSA5MDMuMDE2IDI0MTMuMDUgOTE5Ljg2MVY5OTkuODc1SDIzOTMuOFY5ODMuMDNDMjM4OC45OSA5ODguMjQ0IDIzODIuOTcgOTkyLjQ1NSAyMzc1Ljc1IDk5NS42NjRDMjM2Ni45MyA5OTkuNjc0IDIzNTcuNyAxMDAxLjY4IDIzNDguMDggMTAwMS42OEMyMzM1LjI0IDEwMDEuNjggMjMyNC4wMSA5OTguNDcxIDIzMTQuMzkgOTkyLjA1NEMyMzA1LjE2IDk4NC44MzUgMjMwMC41NSA5NzUuMDA4IDIzMDAuNTUgOTYyLjU3NUMyMzAwLjU1IDk0OC45MzkgMjMwNS45NiA5MzguNzExIDIzMTYuNzkgOTMxLjg5M0MyMzI3LjYyIDkyNS4wNzUgMjM0My4yNiA5MjEuODY2IDIzNjMuNzIgOTIyLjI2N0MyMzc0Ljk1IDkyMi4yNjcgMjM4NC45NyA5MjMuMjcgMjM5My44IDkyNS4yNzVDMjM5My40IDkxMi40NDEgMjM5MC41OSA5MDIuODE1IDIzODUuMzggODk2LjM5OEMyMzc5Ljk2IDg4OS43ODEgMjM3MC45NCA4ODYuMTcxIDIzNTcuNyA4ODYuMTcxQzIzNDQuODcgODg2LjE3MSAyMzMyLjQzIDg5MC45ODQgMjMyMC40IDkwMC42MUwyMzE4LjYgOTAxLjgxM0wyMzE3LjM5IDkwMC4wMDhMMjMwOC45NyA4ODcuOTc2TDIzMTAuNzggODg2Ljc3M0wyMzA5LjU3IDg4NC45NjhDMjMxNS41OSA4NzkuMzUzIDIzMjMuMjEgODc0Ljk0MSAyMzMyLjQzIDg3MS43MzJDMjM0MS42NiA4NjguNTI0IDIzNTAuNjggODY2LjkyIDIzNTkuNTEgODY2LjkyQzIzNzYuMzUgODY2LjkyIDIzOTAuMTkgODcxLjEzMSAyMzk5LjIxIDg4MC43NTZaTTI1OTIuMzMgODY5LjkyOEwyNTkxLjEzIDg3Mi45MzZMMjUzMy45NyA5OTguNjcyTDI1MzMuMzcgOTk5Ljg3NUgyNTIwLjE0TDI1MTkuNTMgOTk5LjI3M0wyNDU5Ljk4IDg3Mi45MzZMMjQ1OC43NyA4NjkuOTI4SDI0ODEuNjNMMjQ4Mi4yMyA4NzEuMTMxTDI1MjcuMzUgOTY4LjU5MUwyNTcwLjY3IDg3MS4xMzFMMjU3MS4yNyA4NjkuOTI4SDI1OTIuMzNaTTIyNDAuMzkgODc5LjU1M0wyMjQxLjU5IDg4MC43NTZMMjI0MC4zOSA4ODEuOTZMMjIyOS41NiA4OTIuNzg5TDIyMjcuNzUgODkzLjk5MkwyMjI2LjU1IDg5Mi43ODlDMjIyMi45NCA4ODguNTc3IDIyMTguMTMgODg2LjE3MSAyMjExLjUxIDg4Ni4xNzFDMjIwNS40OSA4ODYuMTcxIDIyMDAuMjggODg4LjM3NyAyMTk1Ljg3IDg5Mi43ODlDMjE5MS40NiA4OTcuMiAyMTg4LjQ1IDkwMi42MTUgMjE4Ni44NSA5MDkuMDMyVjk5OS44NzVIMjE2Ni45OVY4NjkuOTI4SDIxODYuODVWODc3Ljc0OEMyMTg5LjI1IDg3NC45NDEgMjE5Mi4wNiA4NzIuNzM1IDIxOTUuMjcgODcxLjEzMUMyMjAxLjI4IDg2OC43MjQgMjIwNy4zIDg2Ny4zMjEgMjIxMy4zMiA4NjYuOTJDMjIyNC41NSA4NjYuOTIgMjIzMy41NyA4NzEuMTMxIDIyNDAuMzkgODc5LjU1M1pNMjMxMC43OCA4ODYuNzczTDIzMDguOTcgODg3Ljk3NkwyMzA4LjM3IDg4Ni4xNzFMMjMwOS41NyA4ODQuOTY4TDIzMTAuNzggODg2Ljc3M1pNMjM5My4yIDk0My45MjVDMjM4Ni4zOCA5NDEuNTE5IDIzNzcuMzUgOTQwLjMxNiAyMzY2LjEyIDk0MC4zMTZDMjM1MC40OCA5NDAuMzE2IDIzMzguODUgOTQyLjEyMSAyMzMxLjIzIDk0NS43M0MyMzI3LjYyIDk0Ny43MzYgMjMyNS4wMSA5NDkuOTQxIDIzMjMuNDEgOTUyLjM0OEMyMzIxLjgxIDk1NS4xNTUgMjMyMSA5NTguMTYzIDIzMjEgOTYxLjM3MkMyMzIxIDk2OC45OTIgMjMyNC4wMSA5NzQuNjA3IDIzMzAuMDMgOTc4LjIxN0MyMzM2LjQ0IDk4MS44MjcgMjM0My44NyA5ODMuNjMyIDIzNTIuMjkgOTgzLjYzMkMyMzYwLjcxIDk4My42MzIgMjM2OC43MyA5ODEuMDI1IDIzNzYuMzUgOTc1LjgxMUwyMzc3LjU2IDk3Ny4wMTRWOTc3LjYxNUwyMzc2LjM1IDk3NS44MTFDMjM4NC4zNyA5NzAuNTk3IDIzODkuOTkgOTY0LjM4IDIzOTMuMiA5NTcuMTYxVjk0My45MjVaTTIwOTcuODEgOTgyLjQyOEwyMDk5LjAxIDk4My42MzJMMjA5Ny44MSA5ODQuODM1QzIwOTQuMiA5OTAuMDQ5IDIwODkuMTggOTk0LjI2IDIwODIuNzcgOTk3LjQ2OEMyMDc1Ljk1IDEwMDAuMjggMjA2OS4zMyAxMDAxLjY4IDIwNjIuOTEgMTAwMS42OEMyMDQ5LjA4IDEwMDEuNjggMjAzOC4yNSA5OTYuODY3IDIwMzIuMjMgOTg3LjI0MUMyMDI2LjIxIDk3OC4wMTcgMjAyMy4yMSA5NjUuOTg0IDIwMjMuMjEgOTUxLjE0NVY4ODkuMTc5SDE5OTcuOTRWODY5LjkyOEgyMDIzLjIxVjg0MS42NTJIMjA0My4wNlY4NjkuOTI4SDIwODcuNThWODg5LjE3OUgyMDQzLjA2Vjk0Ny41MzVDMjA0My4wNiA5NTIuNzQ5IDIwNDMuMjYgOTU3LjE2MSAyMDQzLjY2IDk2MC43N0MyMDQ0LjA2IDk2NC4zOCAyMDQ1LjA3IDk2OC4xOSAyMDQ2LjY3IDk3Mi4yMDFDMjA0OC4yNyA5NzUuODExIDIwNTAuNDggOTc4LjQxOCAyMDUzLjI5IDk4MC4wMjJDMjA1Ni41IDk4Mi4wMjcgMjA2MC43MSA5ODMuMDMgMjA2NS45MiA5ODMuMDNDMjA3Mi41NCA5ODMuMDMgMjA3OS4xNiA5NzkuNDIgMjA4NS4xNyA5NzIuODAzTDIwODYuMzggOTcwLjk5OEwyMDg4LjE4IDk3Mi44MDNMMjA5Ny44MSA5ODIuNDI4WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03MTkuNTIyIDE2NC4yMzlDNzE5LjUyMiA3NS44MDI2IDgzMC4yMTggNy4yMTkzMiA4MzUuMDMxIDQuODEyODhMODQyLjI1MSAwTDg0OS40NyA0LjgxMjg4Qzg1NC4yODMgNy4yMTkzMiA5NjQuOTc5IDc1LjgwMjYgOTY0Ljk3OSAxNjQuMjM5Qzk2NC45NzkgMjUzLjI3NyA4NTQuMjgzIDMyMS44NiA4NDkuNDcgMzI0LjI2N0w4NDIuMjUxIDMyOS4wOEw4MzUuMDMxIDMyNC4yNjdDODMwLjIxOCAzMjEuODYgNzE5LjUyMiAyNTMuMjc3IDcxOS41MjIgMTY0LjIzOVpNNzQ4LjQgMTY0LjIzOUM3NDguNCAyMjUuNjAzIDgxOC43ODkgMjc5LjE0NiA4NDIuMjUxIDI5NS4zOUM4NjUuNzE0IDI3OS4xNDYgOTM2LjEwMSAyMjUuMDAxIDkzNi4xMDEgMTY0LjIzOUM5MzYuMTAxIDEwMy40NzcgODY1LjcxNCA0OS45MzM1IDg0Mi4yNTEgMzMuNjkwMUM4MTguNzg5IDQ5LjkzMzUgNzQ4LjQgMTAzLjQ3NyA3NDguNCAxNjQuMjM5WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTg4My4xNiA2NTYuOTU0QzEwMTIuNTEgNDcxLjA1NyAxMTQ2LjY2IDI3OC41NDIgMTMwNy4yOSAyNzguNTQyQzEzMDcuMjkgMjYyLjI5OSAxMjkzLjQ2IDI0OS42NjUgMTI3Ny4yMSAyNTIuMDcxQzExMTUuMzggMjczLjEyOCA5ODUuNDM0IDQ1OS42MjYgODU5LjY5NyA2NDAuNzFDODUzLjY4MSA2NDkuMTMzIDg0Ny44NjYgNjU3LjM1NSA4NDIuMjUxIDY2NS4zNzZDODM2LjYzNiA2NTcuMzU1IDgzMC44MiA2NDkuMTMzIDgyNC44MDQgNjQwLjcxQzY5OS4wNjggNDYwLjIyOCA1NjkuMTIxIDI3My4xMjggNDA3LjI4OCAyNTIuMDcxQzM5MS42NDcgMjQ5LjY2NSAzNzcuMjA4IDI2Mi4yOTkgMzc3LjIwOCAyNzguNTQyQzUzNy44MzcgMjc4LjU0MiA2NzEuOTk2IDQ3MS4wNTcgODAxLjM0MiA2NTYuOTU0QzgwOS4zNjMgNjY4LjE4NCA4MTcuMTgzIDY3OS40MTQgODI0LjgwNCA2OTAuNjQ0Qzc3NC44NyA3NjEuMDMyIDcyNi43NDMgODI2LjYwNyA2NzYuODA5IDg3OC4zNDVDNjM4LjMwNiA4MzIuMDIyIDYwMS42MDcgNzc0Ljg2OSA1NjQuMzA3IDcxNS45MTFDNTEzLjE3MSA2MzUuODk3IDQ2MC44MzEgNTUzLjQ3NyAzOTkuNDY3IDQ5MC4zMDhDMzM2LjkgNDI2LjUzOCAyNzMuNzMxIDM5MS42NDQgMjA1Ljc1IDM4My4yMjJDMTg5LjUwNiAzODEuNDE3IDE3NS4wNjcgMzk0LjA1MSAxNzUuMDY3IDQxMC4yOTRDMzM1LjY5NiA0MTAuMjk0IDQzOS43NzQgNTczLjMzIDU0MC4yNDMgNzMwLjk1MUM1NzguNzQ2IDc5MS43MTQgNjE2LjA0NiA4NTAuNjcxIDY1Ni4zNTQgODk4LjhDNTk3Ljk5OCA5NTQuMTQ4IDU0NC40NTUgOTgxLjIyIDQ5Mi43MTYgOTgxLjIyQzQwMC42NyA5ODEuMjIgMzQ0LjExOSA4ODMuNzYgMjg0LjU1OSA3ODAuMjgzQzI1MC4yNjggNzIwLjcyNCAyMTUuMzc2IDY1OS45NjIgMTcxLjQ1OCA2MTMuMDM2QzEyOC4xNDMgNTY3LjkxNiA4MS44MTc4IDU0Mi4wNDYgMzAuNjgxMSA1MzQuODI3QzIyLjg2MDIgNTM0LjIyNSAxNS4wMzkzIDUzNi42MzIgOS42MjQ4NSA1NDEuNDQ1QzMuNjA4NzcgNTQ2LjI1OCAwIDU1My40NzcgMCA1NjEuMjk4QzEyNS43MzYgNTYxLjI5OCAxOTMuNzE4IDY3OS44MTUgMjU5Ljg5NCA3OTQuMTJDMjkxLjE3OCA4NDkuNDY4IDMyMS4yNTggOTAxLjIwNiAzNTcuMzU1IDk0MC45MTNDMzk4Ljg2NiA5ODcuODM4IDQ0My4zODUgMTAxMC4xIDQ5Mi43MTYgMTAxMC4xQzUyOC4yMTEgMTAxMC4xIDU2My43MDcgOTk5LjI2OSA1OTkuODAzIDk3OC44MTRDNjMxLjA4NyA5NjAuMTY0IDY2My41NzQgOTM0LjI5NSA2OTcuODY1IDg5OC4xOThDNzYwLjQzMyA4MzMuMjI1IDgxOS45OTEgNzQ3Ljc5NiA4ODMuMTYgNjU2Ljk1NFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNTA4LjgzIDQxMC4yOTlDMTUwOC44MyAzOTQuMDU2IDE0OTQuOTkgMzgxLjQyMiAxNDc4Ljc1IDM4My4yMjdDMTQxMC43NyAzOTEuNjQ5IDEzNDcuNiA0MjYuNTQyIDEyODUuMDMgNDkwLjMxM0MxMjIzLjY3IDU1My40ODIgMTE3MS4zMyA2MzUuOTAyIDExMjAuMTkgNzE1LjkxNkMxMDgyLjg5IDc3NC44NzMgMTA0Ni4yIDgzMi4wMjYgMTAwNy42OSA4NzguMzVDOTY0LjM3OCA4MzMuODMxIDkyMi44NjUgNzc5LjA4NSA4ODAuMTUxIDcxOS41MjZDODc0LjEzNSA3MjcuOTQ4IDg2OC4zMiA3MzUuOTY5IDg2Mi43MDUgNzQzLjU5QzkwMy42MTUgODAxLjM0NCA5NDQuNTI0IDg1NC4yODYgOTg3LjIzOCA4OTguMjAzQzk4Ny42MzkgODk5LjAwNSA5ODguMjQxIDg5OS44MDcgOTg5LjA0MyA5MDAuNjFDOTQzLjkyMiA5NDkuMzQgODk2LjM5NiA5ODEuMjI1IDg0Mi4yNTEgOTgxLjIyNUM3OTcuMTMxIDk4MS4yMjUgNzU2LjIyIDk1OC45NjUgNzE3LjcxNyA5MjIuMjY3QzcxMC4wOTcgOTMwLjI4OSA3MDMuNDggOTM3LjMwOCA2OTcuODY1IDk0My4zMjRDNzQxLjE4MSA5ODQuMjMzIDc4OC4xMDYgMTAxMC4xIDg0Mi4yNTEgMTAxMC4xQzk2Ni43ODQgMTAxMC4xIDEwNTMuNDIgODc0Ljc0IDExNDQuMjYgNzMwLjk1NkMxMjQ0LjczIDU3My4zMzUgMTM0OC44IDQxMC4yOTkgMTUwOC44MyA0MTAuMjk5WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTE2NTMuODIgNTM0LjgyN0MxNjAyLjA4IDU0Mi4wNDYgMTU1NS43NiA1NjcuOTE2IDE1MTMuMDQgNjEzLjAzNkMxNDY5LjEzIDY1OS45NjIgMTQzMy42MyA3MjEuMzI2IDEzOTkuOTQgNzgwLjI4M0MxMzQwLjM4IDg4My43NiAxMjgzLjgzIDk4MS4yMiAxMTkxLjc5IDk4MS4yMkMxMTQ5LjA3IDk4MS4yMiAxMTA1LjE1IDk2Mi41NyAxMDU4LjIzIDkyNS4yNzFMMTA0MC4xOCA5NDcuNTNDMTA1NS4yMiA5NTkuNTYyIDEwNzAuMjYgOTcwLjM5MSAxMDg0LjcgOTc4LjgxNEMxMTIwLjggOTk5LjI2OSAxMTU2LjI5IDEwMTAuMSAxMTkxLjc5IDEwMTAuMUMxMjQxLjEyIDEwMTAuMSAxMjg1LjY0IDk4Ny4yMzYgMTMyNy4xNSA5NDAuOTEzQzEzNjMuMjQgOTAxLjIwNiAxMzkzLjMyIDg0OS40NjggMTQyNC42MSA3OTQuMTJDMTQ5MC43OCA2NzkuODE1IDE1NTguNzcgNTYxLjI5OCAxNjgzLjkgNTYxLjI5OEMxNjgzLjkgNTQ1LjA1NCAxNjY5LjQ2IDUzMi40MjEgMTY1My44MiA1MzQuODI3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==" style="height:40px;width:auto;" alt="Corona Travel">
+    </div>
+    <div class="login-title">Travel Synergy</div>
+    <div class="login-sub">Войдите в личный кабинет</div>
+    <div class="form-group">
+      <label class="form-label">Логин</label>
+      <input id="loginEmail" type="text" class="form-input" placeholder="например: maldivesbonus" autocomplete="username" style="text-transform:lowercase;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Пароль</label>
+      <input id="loginPass" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="loginError" style="color:var(--danger);font-size:12px;margin-bottom:12px;display:none;"></div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center;padding:12px;" onclick="doLogin()">
+      Войти
+    </button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text-dim);text-align:center;line-height:1.6;">
+      Тест: <b>seller1</b> / <b>buyer1</b> / <b>admin</b><br>Пароль: <b>demo123</b>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ APP ══════════════════ -->
+<div id="appRoot" class="app" style="display:none;">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDc4MiIgaGVpZ2h0PSIxMDExIiB2aWV3Qm94PSIwIDAgNDc4MiAxMDExIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTIyOTIuNzMgNjMzLjQ5NkwyMjk3LjU0IDYzNy4xMDZDMjI3OS44OSA2NTguNzY0IDIyNTcuNDMgNjc1LjIwOCAyMjMwLjE2IDY4Ni40MzhDMjIwMy4yOSA2OTcuMjY3IDIxNzQuODEgNzAyLjY4MSAyMTQ0LjczIDcwMi42ODFDMjA3Ny45NSA3MDIuNjgxIDIwMjMuODEgNjgyLjIyNiAxOTgyLjkgNjQxLjkxOUMxOTQxLjk5IDYwMS4wMDkgMTkyMi4xNCA1NDcuNDY2IDE5MjIuMTQgNDgxLjg5MUMxOTIyLjE0IDQxNy41MTkgMTk0MS4zOSAzNjQuNTc3IDE5ODEuMDkgMzIzLjY2OEMyMDIwLjggMjgyLjE1NyAyMDcxLjk0IDI2MS4xMDEgMjEzNS4xMSAyNjEuMTAxQzIxNjUuMTkgMjYxLjEwMSAyMTk0LjI2IDI2Ni41MTUgMjIyMi4zNCAyNzcuMzQ0QzIyNTAuODIgMjg3Ljc3MiAyMjc0LjI4IDMwMy44MTUgMjI5Mi43MyAzMjUuNDczTDIyOTUuNzQgMzI5LjA4MkwyMjkyLjczIDMzMy4yOTRMMjI4NC4zMSAzNDMuNTIxTDIyODAuMDkgMzQ3LjczMkwyMjc1Ljg4IDM0NC4xMjNDMjI1Mi4yMiAzMjMuNjY4IDIyMjkuNzYgMzA5LjIyOSAyMjA4LjUgMzAwLjgwN0wyMjEwLjkxIDI5NS4zOTJMMjIxMC4zMSAyOTUuOTk0TDIyMDguNSAzMDAuODA3QzIxODguMDUgMjkyLjM4NCAyMTYyLjk4IDI4OC4xNzMgMjEzMy4zIDI4OC4xNzNDMjA3NS41NSAyODguMTczIDIwMzEuNjMgMzA2LjIyMSAxOTk4LjU0IDM0Mi4zMThDMTk2Ni42NiAzNzguNDE0IDE5NDkuODEgNDI0LjczOCAxOTQ5LjgxIDQ4MS44OTFDMTk0OS44MSA1NDIuMDUyIDE5NjcuODYgNTg4Ljk3NyAyMDAzLjM2IDYyMy4yNjlDMjAzOC44NSA2NTguMTYyIDIwODUuNzggNjc1LjYwOSAyMTQ0LjczIDY3NS42MDlDMjE5OS40OCA2NzUuNjA5IDIyNDQgNjU2Ljk1OSAyMjc5LjQ5IDYyMC4yNjFMMjI4My43IDYxNS40NDhMMjI4Ny45MSA2MjAuMjYxTDIyOTYuOTQgNjI5LjI4NUwyMjkyLjczIDYzMy40OTZaTTQyNzMuODIgMjY2LjUxNVY2OTcuMjY2SDQyNDkuMTZMNDI0Ny4zNSA2OTQuODZMMzk1MS45NiAzMTUuMjQ1VjY5Ny4yNjZIMzkyMy42OVYyNjYuNTE1SDM5NDguOTVMMzk1MC43NiAyNjguOTIyTDQyNDYuMTUgNjQ4LjUzNlYyNjYuNTE1SDQyNzMuODJaTTQ3ODEuNTggNjk3LjI2Nkg0NzUxLjVMNDc0OS43IDY5My42NTdMNDY5MS4zNCA1NjAuNzAySDQ0NjcuNTRMNDQwOS43OSA2OTMuNjU3TDQ0MDcuOTggNjk3LjI2Nkg0Mzc4LjVMNDM4Mi4xMSA2ODguODQ0TDQ1NjUuNiAyNjcuNzE4TDQ1NjYuODEgMjY0LjEwOUg0NTkwLjg3TDQ1OTIuNjggMjY3LjcxOEw0Nzc3Ljk3IDY4OC44NDRMNDc4MS41OCA2OTcuMjY2Wk00Njc5LjkxIDUzMy42MjlMNDU3OC44NCAzMDMuMjEzTDQ0NzkuNTcgNTMzLjYyOUg0Njc5LjkxWk0yODA4LjkxIDQ4MS44OTFDMjgwOC45MSA1NDMuNjU2IDI3ODguMDUgNTk1Ljc5NSAyNzQ2LjM0IDYzOC4zMDlDMjcwNS40MyA2ODEuMDIzIDI2NTQuMjkgNzAyLjY4MSAyNTkzLjUzIDcwMi42ODFDMjUzMS41NyA3MDIuNjgxIDI0NzkuODMgNjgxLjAyMyAyNDM4LjkyIDYzOC4zMDlMMjQ0My4xMyA2MzQuNjk5VjYzNC4wOThMMjQzOC45MiA2MzguMzA5QzIzOTguNDEgNTk1LjM5NCAyMzc4LjE2IDU0My4yNTUgMjM3OC4xNiA0ODEuODkxQzIzNzguMTYgNDIwLjUyNyAyMzk4LjgxIDM2OC41ODggMjQ0MC4xMiAzMjYuMDc0QzI0ODEuNjMgMjgyLjc1OCAyNTMyLjc3IDI2MS4xMDEgMjU5My41MyAyNjEuMTAxQzI2NTUuNSAyNjEuMTAxIDI3MDcuMjQgMjgyLjc1OSAyNzQ3LjU0IDMyNS40NzNDMjc4OC40NSAzNjguMTg3IDI4MDguOTEgNDIwLjUyNyAyODA4LjkxIDQ4MS44OTFaTTI3ODAuNjMgNDgxLjg5MUMyNzgwLjYzIDQyOC4xNDcgMjc2Mi41OCAzODIuNDI1IDI3MjYuNDkgMzQ0LjcyNEMyNjkwLjM5IDMwNi44MjMgMjY0Ni40NyAyODguMTczIDI1OTMuNTMgMjg4LjE3M0MyNTQwLjU5IDI4OC4xNzMgMjQ5Ni4wNyAzMDcuMjI0IDI0NTkuOTcgMzQ1LjMyNkwyNDU1Ljc2IDM0MS4xMTRMMjQ1Ni4zNiAzNDEuNzE2TDI0NTkuOTcgMzQ1LjMyNkMyNDI0LjI4IDM4My40MjggMjQwNi40MyA0MjguOTQ5IDI0MDYuNDMgNDgxLjg5MUMyNDA2LjQzIDUzNC40MzEgMjQyNC40OCA1NzkuOTUzIDI0NjAuNTggNjE4LjQ1NkMyNDk3Ljg4IDY1Ni4zNTcgMjU0MS43OSA2NzUuNjA5IDI1OTMuNTMgNjc1LjYwOUMyNjQ3LjA3IDY3NS42MDkgMjY5MS41OSA2NTYuOTU5IDI3MjcuMDkgNjE5LjA1N0MyNzYyLjc4IDU4MC45NTYgMjc4MC42MyA1MzUuMjMzIDI3ODAuNjMgNDgxLjg5MVpNMzI4My41OCA2ODcuNjQxTDMyOTAuOCA2OTcuMjY2SDMyNTUuOUwzMjU0LjEgNjk0Ljg2TDMxMDguNTEgNTEyLjU3M0gyOTY2LjUzVjY5Ny4yNjZIMjkzOC4yNVYyNjYuNTE1SDMwOTUuODdDMzE0Ny42MSAyNjYuNTE1IDMxODcuOTIgMjc2LjE0MSAzMjE0Ljk5IDI5Ni41OTZDMzI0Mi42NyAzMTcuMDUgMzI1NS45IDM0Ny43MzIgMzI1NS45IDM4Ny40MzhDMzI1NS45IDQyMS43MyAzMjQzLjI3IDQ1MC4wMDYgMzIxOCA0NzEuNjYzQzMxOTUuOTQgNDkwLjExMyAzMTY5LjY3IDUwMS45NDQgMzEzOS4xOSA1MDcuMTU4TDMyODMuNTggNjg3LjY0MVpNMzE1OC40NCA0NzUuODc1QzMxNzcuNjkgNDY5LjA1NyAzMTk0LjE0IDQ1Ny44MjYgMzIwNy43NyA0NDIuMTg1QzMyMjEuNDEgNDI2Ljk0NCAzMjI4LjIzIDQwOC42OTUgMzIyOC4yMyAzODcuNDM4QzMyMjguMjMgMzU2LjE1NSAzMjE3LjQgMzMyLjY5MiAzMTk1Ljc0IDMxNy42NTJDMzE3NC42OSAzMDIuMDEgMzE0MS42IDI5My41ODcgMzA5NS44NyAyOTMuNTg3SDI5NjYuNTNWNDg1LjUwMUgzMDk2LjQ4QzMxMTguMTMgNDg1LjUwMSAzMTM4Ljc5IDQ4Mi4yOTIgMzE1OC40NCA0NzUuODc1Wk0yMjk2LjM0IDYyOS44ODZMMjI5OS45NSA2MzMuNDk2TDIyOTYuOTQgNjM3LjcwN0wyMjkyLjEzIDYzNC4wOThMMjI5Ni4zNCA2MjkuODg2Wk0zNzMyLjM4IDMyNS40NzNDMzc3Mi42OCAzNjguMTg3IDM3OTMuMTQgNDIwLjUyNyAzNzkzLjE0IDQ4MS44OTFDMzc5My4xNCA1NDMuODU2IDM3NzIuNjggNTk2LjE5NiAzNzMxLjE3IDYzOC4zMDlDMzY5MC4yNiA2ODEuMDIzIDM2MzkuMTMgNzAyLjY4MSAzNTc3Ljc2IDcwMi42ODFDMzUxNi40IDcwMi42ODEgMzQ2NC42NiA2ODEuMDIzIDM0MjMuNzUgNjM4LjMwOUMzMzgzLjI0IDU5NS4zOTQgMzM2Mi45OSA1NDMuMjU1IDMzNjIuOTkgNDgxLjg5MUMzMzYyLjk5IDQyMC41MjcgMzM4My42NCAzNjguNTg4IDM0MjQuOTUgMzI2LjA3NEMzNDY2LjQ2IDI4Mi43NTggMzUxNy42IDI2MS4xMDEgMzU3Ny43NiAyNjEuMTAxQzM2NDAuMzMgMjYxLjEwMSAzNjkxLjQ3IDI4Mi43NTkgMzczMi4zOCAzMjUuNDczWk0zNzY0Ljg2IDQ4MS44OTFDMzc2NC44NiA0MjguMTQ3IDM3NDcuMDIgMzgyLjQyNSAzNzExLjMyIDM0NC43MjRDMzY3NS4yMiAzMDcuNDI0IDM2MzAuNyAyODguMTczIDM1NzcuNzYgMjg4LjE3M0MzNTI0LjgyIDI4OC4xNzMgMzQ4MC45IDMwNy40MjQgMzQ0NC44MSAzNDUuMzI2QzM0MDguNzEgMzgzLjQyOCAzMzkwLjY2IDQyOC45NDkgMzM5MC42NiA0ODEuODkxQzMzOTAuNjYgNTM0LjQzMSAzNDA4LjkxIDU3OS45NTMgMzQ0NS40MSA2MTguNDU2QzM0ODIuMTEgNjU2Ljk1OSAzNTI2LjAyIDY3NS42MDkgMzU3Ny43NiA2NzUuNjA5QzM2MzEuOTEgNjc1LjYwOSAzNjc2LjQzIDY1Ni45NTkgMzcxMS45MiA2MTkuMDU3QzM3NDcuMjIgNTgwLjk1NiAzNzY0Ljg2IDUzNS4yMzMgMzc2NC44NiA0ODEuODkxWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yNzU4Ljk3IDg4Ny45NzZDMjc2Ny40IDg5OC44MDUgMjc3MS42MSA5MTEuNDM5IDI3NzEuNjEgOTI1Ljg3N0MyNzcxLjYxIDkyOS44ODggMjc3MS4yMSA5MzQuNSAyNzcwLjQxIDkzOS43MTRWOTQxLjUxOUgyNjY2LjMzQzI2NjcuNTMgOTU0LjM1MyAyNjcyLjM0IDk2NC4zOCAyNjgwLjc2IDk3MS41OTlDMjY4OS41OSA5NzkuMjIgMjcwMS4yMiA5ODMuMDMgMjcxNS42NiA5ODMuMDNDMjcyMi40OCA5ODMuMDMgMjcyOS4yOSA5ODEuMjI1IDI3MzYuMTEgOTc3LjYxNUMyNzQyLjkzIDk3NC4wMDYgMjc0OC4zNSA5NjkuMTkzIDI3NTIuMzYgOTYzLjE3N0wyNzUzLjU2IDk2MS4zNzJMMjc1NS4zNyA5NjIuNTc1TDI3NjYuMTkgOTcyLjIwMUwyNzY3LjQgOTczLjQwNEwyNzY2LjE5IDk3NC42MDdDMjc2MC41OCA5ODMuNDMxIDI3NTMuMTYgOTkwLjI0OSAyNzQzLjkzIDk5NS4wNjJDMjczNC43MSA5OTkuODc1IDI3MjQuODggMTAwMi4yOCAyNzE0LjQ2IDEwMDIuMjhDMjY5NCAxMDAyLjI4IDI2NzcuMzYgOTk2LjA2NSAyNjY0LjUyIDk4My42MzJDMjY1Mi4wOSA5NzAuNzk3IDI2NDUuODcgOTU0LjM1MyAyNjQ1Ljg3IDkzNC4zQzI2NDUuODcgOTE0LjI0NiAyNjUxLjg5IDg5OC4wMDMgMjY2My45MiA4ODUuNTY5QzI2NzUuOTUgODcyLjczNSAyNjkxLjc5IDg2Ni4zMTggMjcxMS40NSA4NjYuMzE4QzI3MTUuMDYgODY2LjMxOCAyNzE5LjY3IDg2Ni45MTkgMjcyNS4yOCA4NjguMTIzQzI3MzkuNzIgODcwLjkzIDI3NTAuOTUgODc3LjU0OCAyNzU4Ljk3IDg4Ny45NzZaTTI3NTAuNTUgOTIyLjg2OUMyNzQ5Ljc1IDkxMS4yMzggMjc0NS45NCA5MDIuMjE0IDI3MzkuMTIgODk1Ljc5N0MyNzMyLjMgODg4Ljk3OCAyNzIyLjY4IDg4NS41NjkgMjcxMC4yNCA4ODUuNTY5QzI2OTguMjEgODg1LjU2OSAyNjg4LjE5IDg4OS4xNzkgMjY4MC4xNiA4OTYuMzk4QzI2NzIuNTQgOTAzLjIxNyAyNjY3LjkzIDkxMi4wNCAyNjY2LjMzIDkyMi44NjlIMjc1MC41NVpNMjg2OS42NyA4MTkuMzkzVjk5OS44NzVIMjg0OS44MlY4MTkuMzkzSDI4NjkuNjdaTTIzOTkuMjEgODgwLjc1NkMyNDA4Ljg0IDg4OS43ODEgMjQxMy4wNSA5MDMuMDE2IDI0MTMuMDUgOTE5Ljg2MVY5OTkuODc1SDIzOTMuOFY5ODMuMDNDMjM4OC45OSA5ODguMjQ0IDIzODIuOTcgOTkyLjQ1NSAyMzc1Ljc1IDk5NS42NjRDMjM2Ni45MyA5OTkuNjc0IDIzNTcuNyAxMDAxLjY4IDIzNDguMDggMTAwMS42OEMyMzM1LjI0IDEwMDEuNjggMjMyNC4wMSA5OTguNDcxIDIzMTQuMzkgOTkyLjA1NEMyMzA1LjE2IDk4NC44MzUgMjMwMC41NSA5NzUuMDA4IDIzMDAuNTUgOTYyLjU3NUMyMzAwLjU1IDk0OC45MzkgMjMwNS45NiA5MzguNzExIDIzMTYuNzkgOTMxLjg5M0MyMzI3LjYyIDkyNS4wNzUgMjM0My4yNiA5MjEuODY2IDIzNjMuNzIgOTIyLjI2N0MyMzc0Ljk1IDkyMi4yNjcgMjM4NC45NyA5MjMuMjcgMjM5My44IDkyNS4yNzVDMjM5My40IDkxMi40NDEgMjM5MC41OSA5MDIuODE1IDIzODUuMzggODk2LjM5OEMyMzc5Ljk2IDg4OS43ODEgMjM3MC45NCA4ODYuMTcxIDIzNTcuNyA4ODYuMTcxQzIzNDQuODcgODg2LjE3MSAyMzMyLjQzIDg5MC45ODQgMjMyMC40IDkwMC42MUwyMzE4LjYgOTAxLjgxM0wyMzE3LjM5IDkwMC4wMDhMMjMwOC45NyA4ODcuOTc2TDIzMTAuNzggODg2Ljc3M0wyMzA5LjU3IDg4NC45NjhDMjMxNS41OSA4NzkuMzUzIDIzMjMuMjEgODc0Ljk0MSAyMzMyLjQzIDg3MS43MzJDMjM0MS42NiA4NjguNTI0IDIzNTAuNjggODY2LjkyIDIzNTkuNTEgODY2LjkyQzIzNzYuMzUgODY2LjkyIDIzOTAuMTkgODcxLjEzMSAyMzk5LjIxIDg4MC43NTZaTTI1OTIuMzMgODY5LjkyOEwyNTkxLjEzIDg3Mi45MzZMMjUzMy45NyA5OTguNjcyTDI1MzMuMzcgOTk5Ljg3NUgyNTIwLjE0TDI1MTkuNTMgOTk5LjI3M0wyNDU5Ljk4IDg3Mi45MzZMMjQ1OC43NyA4NjkuOTI4SDI0ODEuNjNMMjQ4Mi4yMyA4NzEuMTMxTDI1MjcuMzUgOTY4LjU5MUwyNTcwLjY3IDg3MS4xMzFMMjU3MS4yNyA4NjkuOTI4SDI1OTIuMzNaTTIyNDAuMzkgODc5LjU1M0wyMjQxLjU5IDg4MC43NTZMMjI0MC4zOSA4ODEuOTZMMjIyOS41NiA4OTIuNzg5TDIyMjcuNzUgODkzLjk5MkwyMjI2LjU1IDg5Mi43ODlDMjIyMi45NCA4ODguNTc3IDIyMTguMTMgODg2LjE3MSAyMjExLjUxIDg4Ni4xNzFDMjIwNS40OSA4ODYuMTcxIDIyMDAuMjggODg4LjM3NyAyMTk1Ljg3IDg5Mi43ODlDMjE5MS40NiA4OTcuMiAyMTg4LjQ1IDkwMi42MTUgMjE4Ni44NSA5MDkuMDMyVjk5OS44NzVIMjE2Ni45OVY4NjkuOTI4SDIxODYuODVWODc3Ljc0OEMyMTg5LjI1IDg3NC45NDEgMjE5Mi4wNiA4NzIuNzM1IDIxOTUuMjcgODcxLjEzMUMyMjAxLjI4IDg2OC43MjQgMjIwNy4zIDg2Ny4zMjEgMjIxMy4zMiA4NjYuOTJDMjIyNC41NSA4NjYuOTIgMjIzMy41NyA4NzEuMTMxIDIyNDAuMzkgODc5LjU1M1pNMjMxMC43OCA4ODYuNzczTDIzMDguOTcgODg3Ljk3NkwyMzA4LjM3IDg4Ni4xNzFMMjMwOS41NyA4ODQuOTY4TDIzMTAuNzggODg2Ljc3M1pNMjM5My4yIDk0My45MjVDMjM4Ni4zOCA5NDEuNTE5IDIzNzcuMzUgOTQwLjMxNiAyMzY2LjEyIDk0MC4zMTZDMjM1MC40OCA5NDAuMzE2IDIzMzguODUgOTQyLjEyMSAyMzMxLjIzIDk0NS43M0MyMzI3LjYyIDk0Ny43MzYgMjMyNS4wMSA5NDkuOTQxIDIzMjMuNDEgOTUyLjM0OEMyMzIxLjgxIDk1NS4xNTUgMjMyMSA5NTguMTYzIDIzMjEgOTYxLjM3MkMyMzIxIDk2OC45OTIgMjMyNC4wMSA5NzQuNjA3IDIzMzAuMDMgOTc4LjIxN0MyMzM2LjQ0IDk4MS44MjcgMjM0My44NyA5ODMuNjMyIDIzNTIuMjkgOTgzLjYzMkMyMzYwLjcxIDk4My42MzIgMjM2OC43MyA5ODEuMDI1IDIzNzYuMzUgOTc1LjgxMUwyMzc3LjU2IDk3Ny4wMTRWOTc3LjYxNUwyMzc2LjM1IDk3NS44MTFDMjM4NC4zNyA5NzAuNTk3IDIzODkuOTkgOTY0LjM4IDIzOTMuMiA5NTcuMTYxVjk0My45MjVaTTIwOTcuODEgOTgyLjQyOEwyMDk5LjAxIDk4My42MzJMMjA5Ny44MSA5ODQuODM1QzIwOTQuMiA5OTAuMDQ5IDIwODkuMTggOTk0LjI2IDIwODIuNzcgOTk3LjQ2OEMyMDc1Ljk1IDEwMDAuMjggMjA2OS4zMyAxMDAxLjY4IDIwNjIuOTEgMTAwMS42OEMyMDQ5LjA4IDEwMDEuNjggMjAzOC4yNSA5OTYuODY3IDIwMzIuMjMgOTg3LjI0MUMyMDI2LjIxIDk3OC4wMTcgMjAyMy4yMSA5NjUuOTg0IDIwMjMuMjEgOTUxLjE0NVY4ODkuMTc5SDE5OTcuOTRWODY5LjkyOEgyMDIzLjIxVjg0MS42NTJIMjA0My4wNlY4NjkuOTI4SDIwODcuNThWODg5LjE3OUgyMDQzLjA2Vjk0Ny41MzVDMjA0My4wNiA5NTIuNzQ5IDIwNDMuMjYgOTU3LjE2MSAyMDQzLjY2IDk2MC43N0MyMDQ0LjA2IDk2NC4zOCAyMDQ1LjA3IDk2OC4xOSAyMDQ2LjY3IDk3Mi4yMDFDMjA0OC4yNyA5NzUuODExIDIwNTAuNDggOTc4LjQxOCAyMDUzLjI5IDk4MC4wMjJDMjA1Ni41IDk4Mi4wMjcgMjA2MC43MSA5ODMuMDMgMjA2NS45MiA5ODMuMDNDMjA3Mi41NCA5ODMuMDMgMjA3OS4xNiA5NzkuNDIgMjA4NS4xNyA5NzIuODAzTDIwODYuMzggOTcwLjk5OEwyMDg4LjE4IDk3Mi44MDNMMjA5Ny44MSA5ODIuNDI4WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03MTkuNTIyIDE2NC4yMzlDNzE5LjUyMiA3NS44MDI2IDgzMC4yMTggNy4yMTkzMiA4MzUuMDMxIDQuODEyODhMODQyLjI1MSAwTDg0OS40NyA0LjgxMjg4Qzg1NC4yODMgNy4yMTkzMiA5NjQuOTc5IDc1LjgwMjYgOTY0Ljk3OSAxNjQuMjM5Qzk2NC45NzkgMjUzLjI3NyA4NTQuMjgzIDMyMS44NiA4NDkuNDcgMzI0LjI2N0w4NDIuMjUxIDMyOS4wOEw4MzUuMDMxIDMyNC4yNjdDODMwLjIxOCAzMjEuODYgNzE5LjUyMiAyNTMuMjc3IDcxOS41MjIgMTY0LjIzOVpNNzQ4LjQgMTY0LjIzOUM3NDguNCAyMjUuNjAzIDgxOC43ODkgMjc5LjE0NiA4NDIuMjUxIDI5NS4zOUM4NjUuNzE0IDI3OS4xNDYgOTM2LjEwMSAyMjUuMDAxIDkzNi4xMDEgMTY0LjIzOUM5MzYuMTAxIDEwMy40NzcgODY1LjcxNCA0OS45MzM1IDg0Mi4yNTEgMzMuNjkwMUM4MTguNzg5IDQ5LjkzMzUgNzQ4LjQgMTAzLjQ3NyA3NDguNCAxNjQuMjM5WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTg4My4xNiA2NTYuOTU0QzEwMTIuNTEgNDcxLjA1NyAxMTQ2LjY2IDI3OC41NDIgMTMwNy4yOSAyNzguNTQyQzEzMDcuMjkgMjYyLjI5OSAxMjkzLjQ2IDI0OS42NjUgMTI3Ny4yMSAyNTIuMDcxQzExMTUuMzggMjczLjEyOCA5ODUuNDM0IDQ1OS42MjYgODU5LjY5NyA2NDAuNzFDODUzLjY4MSA2NDkuMTMzIDg0Ny44NjYgNjU3LjM1NSA4NDIuMjUxIDY2NS4zNzZDODM2LjYzNiA2NTcuMzU1IDgzMC44MiA2NDkuMTMzIDgyNC44MDQgNjQwLjcxQzY5OS4wNjggNDYwLjIyOCA1NjkuMTIxIDI3My4xMjggNDA3LjI4OCAyNTIuMDcxQzM5MS42NDcgMjQ5LjY2NSAzNzcuMjA4IDI2Mi4yOTkgMzc3LjIwOCAyNzguNTQyQzUzNy44MzcgMjc4LjU0MiA2NzEuOTk2IDQ3MS4wNTcgODAxLjM0MiA2NTYuOTU0QzgwOS4zNjMgNjY4LjE4NCA4MTcuMTgzIDY3OS40MTQgODI0LjgwNCA2OTAuNjQ0Qzc3NC44NyA3NjEuMDMyIDcyNi43NDMgODI2LjYwNyA2NzYuODA5IDg3OC4zNDVDNjM4LjMwNiA4MzIuMDIyIDYwMS42MDcgNzc0Ljg2OSA1NjQuMzA3IDcxNS45MTFDNTEzLjE3MSA2MzUuODk3IDQ2MC44MzEgNTUzLjQ3NyAzOTkuNDY3IDQ5MC4zMDhDMzM2LjkgNDI2LjUzOCAyNzMuNzMxIDM5MS42NDQgMjA1Ljc1IDM4My4yMjJDMTg5LjUwNiAzODEuNDE3IDE3NS4wNjcgMzk0LjA1MSAxNzUuMDY3IDQxMC4yOTRDMzM1LjY5NiA0MTAuMjk0IDQzOS43NzQgNTczLjMzIDU0MC4yNDMgNzMwLjk1MUM1NzguNzQ2IDc5MS43MTQgNjE2LjA0NiA4NTAuNjcxIDY1Ni4zNTQgODk4LjhDNTk3Ljk5OCA5NTQuMTQ4IDU0NC40NTUgOTgxLjIyIDQ5Mi43MTYgOTgxLjIyQzQwMC42NyA5ODEuMjIgMzQ0LjExOSA4ODMuNzYgMjg0LjU1OSA3ODAuMjgzQzI1MC4yNjggNzIwLjcyNCAyMTUuMzc2IDY1OS45NjIgMTcxLjQ1OCA2MTMuMDM2QzEyOC4xNDMgNTY3LjkxNiA4MS44MTc4IDU0Mi4wNDYgMzAuNjgxMSA1MzQuODI3QzIyLjg2MDIgNTM0LjIyNSAxNS4wMzkzIDUzNi42MzIgOS42MjQ4NSA1NDEuNDQ1QzMuNjA4NzcgNTQ2LjI1OCAwIDU1My40NzcgMCA1NjEuMjk4QzEyNS43MzYgNTYxLjI5OCAxOTMuNzE4IDY3OS44MTUgMjU5Ljg5NCA3OTQuMTJDMjkxLjE3OCA4NDkuNDY4IDMyMS4yNTggOTAxLjIwNiAzNTcuMzU1IDk0MC45MTNDMzk4Ljg2NiA5ODcuODM4IDQ0My4zODUgMTAxMC4xIDQ5Mi43MTYgMTAxMC4xQzUyOC4yMTEgMTAxMC4xIDU2My43MDcgOTk5LjI2OSA1OTkuODAzIDk3OC44MTRDNjMxLjA4NyA5NjAuMTY0IDY2My41NzQgOTM0LjI5NSA2OTcuODY1IDg5OC4xOThDNzYwLjQzMyA4MzMuMjI1IDgxOS45OTEgNzQ3Ljc5NiA4ODMuMTYgNjU2Ljk1NFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNTA4LjgzIDQxMC4yOTlDMTUwOC44MyAzOTQuMDU2IDE0OTQuOTkgMzgxLjQyMiAxNDc4Ljc1IDM4My4yMjdDMTQxMC43NyAzOTEuNjQ5IDEzNDcuNiA0MjYuNTQyIDEyODUuMDMgNDkwLjMxM0MxMjIzLjY3IDU1My40ODIgMTE3MS4zMyA2MzUuOTAyIDExMjAuMTkgNzE1LjkxNkMxMDgyLjg5IDc3NC44NzMgMTA0Ni4yIDgzMi4wMjYgMTAwNy42OSA4NzguMzVDOTY0LjM3OCA4MzMuODMxIDkyMi44NjUgNzc5LjA4NSA4ODAuMTUxIDcxOS41MjZDODc0LjEzNSA3MjcuOTQ4IDg2OC4zMiA3MzUuOTY5IDg2Mi43MDUgNzQzLjU5QzkwMy42MTUgODAxLjM0NCA5NDQuNTI0IDg1NC4yODYgOTg3LjIzOCA4OTguMjAzQzk4Ny42MzkgODk5LjAwNSA5ODguMjQxIDg5OS44MDcgOTg5LjA0MyA5MDAuNjFDOTQzLjkyMiA5NDkuMzQgODk2LjM5NiA5ODEuMjI1IDg0Mi4yNTEgOTgxLjIyNUM3OTcuMTMxIDk4MS4yMjUgNzU2LjIyIDk1OC45NjUgNzE3LjcxNyA5MjIuMjY3QzcxMC4wOTcgOTMwLjI4OSA3MDMuNDggOTM3LjMwOCA2OTcuODY1IDk0My4zMjRDNzQxLjE4MSA5ODQuMjMzIDc4OC4xMDYgMTAxMC4xIDg0Mi4yNTEgMTAxMC4xQzk2Ni43ODQgMTAxMC4xIDEwNTMuNDIgODc0Ljc0IDExNDQuMjYgNzMwLjk1NkMxMjQ0LjczIDU3My4zMzUgMTM0OC44IDQxMC4yOTkgMTUwOC44MyA0MTAuMjk5WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTE2NTMuODIgNTM0LjgyN0MxNjAyLjA4IDU0Mi4wNDYgMTU1NS43NiA1NjcuOTE2IDE1MTMuMDQgNjEzLjAzNkMxNDY5LjEzIDY1OS45NjIgMTQzMy42MyA3MjEuMzI2IDEzOTkuOTQgNzgwLjI4M0MxMzQwLjM4IDg4My43NiAxMjgzLjgzIDk4MS4yMiAxMTkxLjc5IDk4MS4yMkMxMTQ5LjA3IDk4MS4yMiAxMTA1LjE1IDk2Mi41NyAxMDU4LjIzIDkyNS4yNzFMMTA0MC4xOCA5NDcuNTNDMTA1NS4yMiA5NTkuNTYyIDEwNzAuMjYgOTcwLjM5MSAxMDg0LjcgOTc4LjgxNEMxMTIwLjggOTk5LjI2OSAxMTU2LjI5IDEwMTAuMSAxMTkxLjc5IDEwMTAuMUMxMjQxLjEyIDEwMTAuMSAxMjg1LjY0IDk4Ny4yMzYgMTMyNy4xNSA5NDAuOTEzQzEzNjMuMjQgOTAxLjIwNiAxMzkzLjMyIDg0OS40NjggMTQyNC42MSA3OTQuMTJDMTQ5MC43OCA2NzkuODE1IDE1NTguNzcgNTYxLjI5OCAxNjgzLjkgNTYxLjI5OEMxNjgzLjkgNTQ1LjA1NCAxNjY5LjQ2IDUzMi40MjEgMTY1My44MiA1MzQuODI3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==" style="height:32px;width:auto;" alt="Corona Travel">
+      <div class="logo-label">SYNERGY<br>WORKSHOP</div>
+    </div>
+    <div class="header-right">
+      <div id="notifBell" style="cursor:pointer;font-size:18px;position:relative;" onclick="switchTab('notifications')">
+        🔔<span id="notifCount" class="notif-count" style="display:none;position:absolute;top:-4px;right:-4px;"></span>
+      </div>
+      <div class="user-pill">
+        <span id="roleLabel" class="role-badge role-seller">SELLER</span>
+        <span id="userName">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Выйти</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TABS -->
+    <div id="tabBar" class="tabs"></div>
+
+    <!-- ── SELLER: Buyers list ── -->
+    <div id="tabBuyers" class="page">
+      <div class="section-title">Байеры · матчинг</div>
+      <div id="buyersList"></div>
+    </div>
+
+    <!-- ── SELLER / BUYER: Schedule ── -->
+    <div id="tabSchedule" class="page">
+      <div class="section-title">Моё расписание</div>
+      <div id="scheduleList"></div>
+    </div>
+
+    <!-- ── BUYER: Incoming requests ── -->
+    <div id="tabRequests" class="page">
+      <div class="section-title">Входящие запросы</div>
+      <div id="requestsList"></div>
+    </div>
+
+    <!-- ── Notifications ── -->
+    <div id="tabNotifications" class="page">
+      <div class="section-title">Уведомления</div>
+      <div id="notifList"></div>
+    </div>
+
+    <!-- ── Profile ── -->
+    <div id="tabProfile" class="page">
+      <div class="section-title">Мой профиль</div>
+      <div id="profileContent"></div>
+    </div>
+
+    <!-- ── ADMIN: Matrix ── -->
+    <div id="tabAdmin" class="page">
+      <div class="section-title">Админ · управление</div>
+      <div class="grid-3" style="margin-bottom:24px;" id="adminStats"></div>
+
+      <!-- Create participant -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Добавить участника</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Название компании</label>
+            <input id="newCompany" type="text" class="form-input" placeholder="Maldives Pro"
+              oninput="previewLogin(this.value)">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Имя контакта</label>
+            <input id="newName" type="text" class="form-input" placeholder="Анна Морозова">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Роль</label>
+            <select id="newRole" class="form-input">
+              <option value="seller">Селлер</option>
+              <option value="buyer">Байер</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" onclick="createParticipant()" style="white-space:nowrap;">
+            + Создать
+          </button>
+        </div>
+        <div id="loginPreview" style="margin-top:12px;display:none;">
+          <div style="display:flex;gap:12px;align-items:center;padding:12px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;">
+            <span style="color:var(--text-dim);">Логин:</span>
+            <span id="previewLoginVal" style="color:var(--gold);font-weight:500;font-family:monospace;"></span>
+            <span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>
+            <span id="previewPassVal" style="color:var(--gold-lt);font-weight:500;font-family:monospace;"></span>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:4px;">(сгенерирован, сохранится после создания)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Participants list -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Участники мероприятия</div>
+        <div id="adminParticipants"></div>
+      </div>
+
+      <!-- Meetings matrix -->
+      <div class="card">
+        <div class="card-title">Матрица встреч</div>
+        <div id="adminMatrix"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════ MODALS ══════════════════ -->
+
+<!-- Modal: Propose meeting -->
+<div id="modalPropose" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">Предложить встречу</div>
+    <div id="proposeBuyerInfo" style="margin-bottom:16px;"></div>
+    <div class="form-group">
+      <label class="form-label">Выберите удобный слот</label>
+      <div id="proposeSlots" class="slot-grid"></div>
+    </div>
+    <div id="proposeAltMsg" style="display:none;font-size:12px;color:var(--warn);margin-top:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPropose')">Отмена</button>
+      <button class="btn btn-gold btn-sm" id="proposeSendBtn" onclick="sendProposal()" disabled>Отправить запрос</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Meeting detail (buyer respond) -->
+<div id="modalMeeting" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">Запрос на встречу</div>
+    <div id="meetingDetail" style="margin-bottom:16px;"></div>
+    <div class="form-group" id="altSlotGroup" style="display:none;">
+      <label class="form-label">Предложить другое время</label>
+      <div id="altSlots" class="slot-grid"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMeeting')">Закрыть</button>
+      <button class="btn btn-outline btn-sm" id="btnAltSlot" onclick="toggleAltSlot()">⏱ Другое время</button>
+      <button class="btn btn-danger btn-sm" id="btnDecline" onclick="respondMeeting('declined')">Отклонить</button>
+      <button class="btn btn-ok btn-sm" id="btnConfirm" onclick="respondMeeting('confirmed')">Подтвердить ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Match reason -->
+<div id="modalReason" class="modal-overlay" style="display:none;">
+  <div class="modal" style="width:400px;">
+    <div class="modal-title">Почему этот матч?</div>
+    <div id="reasonText" style="font-size:14px;line-height:1.6;color:var(--text);"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold btn-sm" onclick="closeModal('modalReason')">Понятно</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG — замени на свои ключи из Supabase
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://snurfexcbscqxykujweq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNudXJmZXhjYnNjcXh5a3Vqd2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjkwMTEsImV4cCI6MjA4OTUwNTAxMX0.sRvMfgrR0m6AS-57_3FvzcRnuMfTkUbAf5gnK94AroY';
+const EVENT_ID     = '00000000-0000-0000-0000-000000000001';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let currentUser = null;
+let allSlots    = [];
+let allBuyers   = [];
+let allSellers  = [];
+let myMeetings  = [];
+let myMatches   = [];
+let myNotifs    = [];
+
+// modal state
+let proposeTarget   = null;  // buyer user object
+let proposeSlotId   = null;
+let meetingTarget   = null;  // meeting object
+let altSlotId       = null;
+
+// realtime channels
+let realtimeChannel = null;
+
+// ══════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('loginPass').value.trim();
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  if (!email || !pass) { showLoginError('Заполните email и пароль'); return; }
+
+  const login = email.toLowerCase().trim();
+  const { data, error } = await sb
+    .from('users')
+    .select('*')
+    .eq('login', login)
+    .eq('password_hash', pass)
+    .eq('event_id', EVENT_ID)
+    .single();
+
+  if (error || !data) { showLoginError('Неверный email или пароль'); return; }
+
+  currentUser = data;
+  sessionStorage.setItem('ts_user_id', data.id);
+  await startApp();
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+async function checkSession() {
+  const uid = sessionStorage.getItem('ts_user_id');
+  if (!uid) return false;
+  const { data } = await sb.from('users').select('*').eq('id', uid).single();
+  if (!data) return false;
+  currentUser = data;
+  return true;
+}
+
+function doLogout() {
+  sessionStorage.removeItem('ts_user_id');
+  if (realtimeChannel) sb.removeChannel(realtimeChannel);
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  currentUser = null;
+}
+
+// ══════════════════════════════════════════════
+// APP INIT
+// ══════════════════════════════════════════════
+async function startApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'flex';
+
+  // header
+  const roleMap = { seller:'role-seller', buyer:'role-buyer', admin:'role-admin' };
+  const roleLabel = { seller:'SELLER', buyer:'БАЙЕР', admin:'ADMIN' };
+  document.getElementById('userName').textContent = currentUser.name;
+  const rb = document.getElementById('roleLabel');
+  rb.textContent = roleLabel[currentUser.role];
+  rb.className = 'role-badge ' + roleMap[currentUser.role];
+
+  // tabs
+  buildTabs();
+
+  // load data
+  await Promise.all([loadSlots(), loadUsers(), loadMeetings(), loadNotifs(), loadMatches()]);
+
+  // render
+  render();
+  setupRealtime();
+}
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
+const TABS = {
+  seller: [
+    { id:'buyers',        label:'Байеры' },
+    { id:'schedule',      label:'Расписание' },
+    { id:'notifications', label:'Уведомления' },
+    { id:'profile',       label:'Профиль' },
+  ],
+  buyer: [
+    { id:'requests',      label:'Запросы' },
+    { id:'schedule',      label:'Расписание' },
+    { id:'notifications', label:'Уведомления' },
+    { id:'profile',       label:'Профиль' },
+  ],
+  admin: [
+    { id:'admin',         label:'Матрица' },
+    { id:'buyers',        label:'Байеры' },
+    { id:'schedule',      label:'Расписание' },
+    { id:'notifications', label:'Уведомления' },
+  ],
+};
+
+let activeTab = null;
+
+function buildTabs() {
+  const tabs = TABS[currentUser.role] || [];
+  const bar  = document.getElementById('tabBar');
+  bar.innerHTML = tabs.map(t =>
+    `<button class="tab" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.label}</button>`
+  ).join('');
+  switchTab(tabs[0].id);
+}
+
+function switchTab(id) {
+  activeTab = id;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab' + cap(id)));
+  renderTab(id);
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function renderTab(id) {
+  if (id === 'buyers')        renderBuyers();
+  if (id === 'schedule')      renderSchedule();
+  if (id === 'requests')      renderRequests();
+  if (id === 'notifications') renderNotifications();
+  if (id === 'profile')       renderProfile();
+  if (id === 'admin')         renderAdmin();
+}
+
+// ══════════════════════════════════════════════
+// DATA LOADERS
+// ══════════════════════════════════════════════
+async function loadSlots() {
+  const { data } = await sb.from('slots').select('*').eq('event_id', EVENT_ID).order('sort_order');
+  allSlots = data || [];
+}
+
+async function loadUsers() {
+  const { data } = await sb.from('users').select('*').eq('event_id', EVENT_ID);
+  allBuyers  = (data || []).filter(u => u.role === 'buyer');
+  allSellers = (data || []).filter(u => u.role === 'seller');
+}
+
+async function loadMeetings() {
+  const { data } = await sb.from('meetings')
+    .select('*, slot:slot_id(*), alt_slot:alt_slot_id(*), seller:seller_id(id,name,company,role), buyer:buyer_id(id,name,company,role)')
+    .eq('event_id', EVENT_ID)
+    .or(`seller_id.eq.${currentUser.id},buyer_id.eq.${currentUser.id}`);
+  myMeetings = data || [];
+}
+
+async function loadAllMeetings() {
+  const { data } = await sb.from('meetings')
+    .select('*, slot:slot_id(*), seller:seller_id(id,name,company), buyer:buyer_id(id,name,company)')
+    .eq('event_id', EVENT_ID);
+  return data || [];
+}
+
+async function loadMatches() {
+  if (currentUser.role !== 'seller' && currentUser.role !== 'admin') { myMatches = []; return; }
+  const col = currentUser.role === 'seller' ? 'seller_id' : 'event_id';
+  const val = currentUser.role === 'seller' ? currentUser.id : EVENT_ID;
+  const { data } = await sb.from('matches').select('*').eq(col, val);
+  myMatches = data || [];
+}
+
+async function loadNotifs() {
+  const { data } = await sb.from('notifications')
+    .select('*').eq('user_id', currentUser.id).order('sent_at', { ascending: false }).limit(30);
+  myNotifs = data || [];
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  const unread = myNotifs.filter(n => !n.is_read).length;
+  const el = document.getElementById('notifCount');
+  if (unread > 0) { el.style.display = 'flex'; el.textContent = unread; }
+  else { el.style.display = 'none'; }
+}
+
+// ══════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════════
+
+function render() { renderTab(activeTab); }
+
+/* ── BUYERS ── */
+function renderBuyers() {
+  const el = document.getElementById('buyersList');
+  const buyers = currentUser.role === 'admin' ? allBuyers : allBuyers;
+
+  if (!buyers.length) { el.innerHTML = '<div class="empty">Байеры не загружены</div>'; return; }
+
+  // Sort by match rate for sellers
+  let sorted = [...buyers];
+  if (currentUser.role === 'seller') {
+    sorted.sort((a, b) => {
+      const ma = getMatch(a.id); const mb = getMatch(b.id);
+      return mb.rate - ma.rate;
+    });
+  }
+
+  el.innerHTML = sorted.map(b => {
+    const m = getMatch(b.id);
+    const initials = b.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const matchCls = m.rate >= 65 ? 'match-gold' : m.rate >= 40 ? 'match-ok' : 'match-dim';
+    const dotCls   = m.rate >= 65 ? 'dot-gold'   : m.rate >= 40 ? 'dot-ok'   : 'dot-dim';
+    const existing = myMeetings.find(mt =>
+      (mt.seller_id === currentUser.id || mt.seller?.id === currentUser.id) &&
+      (mt.buyer_id  === b.id           || mt.buyer?.id  === b.id)
+    );
+    const btnDisabled = (currentUser.role === 'admin' || !!existing) ? 'disabled' : '';
+    const btnLabel = existing
+      ? (existing.status === 'confirmed' ? '✓ Подтверждено' : '⏳ Ожидает')
+      : 'Предложить встречу';
+
+    return `
+      <div class="buyer-item">
+        <div class="buyer-info">
+          <div class="buyer-avatar">${initials}</div>
+          <div>
+            <div class="buyer-name">${b.name}</div>
+            <div class="buyer-company">${b.company}</div>
+          </div>
+        </div>
+        <div class="buyer-right">
+          ${m.rate > 0 ? `
+            <div class="match-badge ${matchCls}">
+              <span class="match-dot ${dotCls}"></span>
+              ${m.rate}%
+            </div>
+            <button class="reason-btn" onclick="showReason('${b.id}')" title="Почему этот матч?">💡</button>
+          ` : ''}
+          ${currentUser.role === 'seller' ? `
+            <button class="btn btn-gold btn-sm" onclick="openPropose('${b.id}')" ${btnDisabled}>${btnLabel}</button>
+          ` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function getMatch(buyerId) {
+  const m = myMatches.find(x => x.buyer_id === buyerId);
+  return m ? { rate: m.match_rate, reason: m.match_reason } : { rate: 0, reason: '' };
+}
+
+/* ── SCHEDULE ── */
+function renderSchedule() {
+  const el = document.getElementById('scheduleList');
+  const confirmed = myMeetings.filter(m => m.status === 'confirmed');
+
+  if (!confirmed.length) {
+    el.innerHTML = '<div class="empty">Подтверждённых встреч пока нет</div>';
+    return;
+  }
+
+  const sorted = confirmed.sort((a,b) => (a.slot?.sort_order||0) - (b.slot?.sort_order||0));
+
+  el.innerHTML = sorted.map(m => {
+    const other = currentUser.role === 'seller' ? m.buyer : m.seller;
+    return `
+      <div class="schedule-item">
+        <div class="schedule-time">${m.slot?.time_label || '—'}</div>
+        <div class="schedule-info">
+          <div class="schedule-name">${other?.name || '—'}</div>
+          <div class="schedule-company">${other?.company || '—'}</div>
+        </div>
+        <span class="status-badge status-confirmed">✓ Подтверждено</span>
+      </div>`;
+  }).join('');
+}
+
+/* ── REQUESTS (buyer) ── */
+function renderRequests() {
+  const el = document.getElementById('requestsList');
+  const pending = myMeetings.filter(m =>
+    (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) &&
+    m.status === 'pending'
+  );
+  const others = myMeetings.filter(m =>
+    (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) &&
+    m.status !== 'pending'
+  );
+
+  if (!pending.length && !others.length) {
+    el.innerHTML = '<div class="empty">Запросов пока нет — селлеры скоро свяжутся с вами</div>';
+    return;
+  }
+
+  const renderItem = m => {
+    const seller = m.seller;
+    const initials = seller?.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?';
+    const statusMap = {
+      pending: '<span class="status-badge status-pending">Ожидает ответа</span>',
+      confirmed: '<span class="status-badge status-confirmed">✓ Подтверждено</span>',
+      declined: '<span class="status-badge status-declined">Отклонено</span>',
+    };
+    return `
+      <div class="buyer-item">
+        <div class="buyer-info">
+          <div class="buyer-avatar" style="background:var(--navy)">${initials}</div>
+          <div>
+            <div class="buyer-name">${seller?.name || '—'}</div>
+            <div class="buyer-company">${seller?.company || '—'} · ${m.slot?.time_label || '—'}</div>
+          </div>
+        </div>
+        <div class="buyer-right">
+          ${statusMap[m.status] || ''}
+          ${m.status === 'pending' ? `<button class="btn btn-gold btn-sm" onclick="openMeeting('${m.id}')">Ответить</button>` : ''}
+        </div>
+      </div>`;
+  };
+
+  el.innerHTML = (pending.length ? '<div style="margin-bottom:8px;font-size:12px;color:var(--warn);">● Ожидают ответа</div>' : '') +
+    pending.map(renderItem).join('') +
+    (others.length ? '<div class="divider"></div>' : '') +
+    others.map(renderItem).join('');
+}
+
+/* ── NOTIFICATIONS ── */
+async function renderNotifications() {
+  const el = document.getElementById('notifList');
+  if (!myNotifs.length) { el.innerHTML = '<div class="empty">Уведомлений нет</div>'; return; }
+
+  el.innerHTML = myNotifs.map(n => `
+    <div class="notif-item">
+      <div class="notif-dot ${n.is_read ? 'read' : ''}"></div>
+      <div>
+        <div class="notif-text">${n.message}</div>
+        <div class="notif-time">${formatTime(n.sent_at)}</div>
+      </div>
+    </div>`).join('');
+
+  // mark all as read
+  const unreadIds = myNotifs.filter(n => !n.is_read).map(n => n.id);
+  if (unreadIds.length) {
+    await sb.from('notifications').update({ is_read: true }).in('id', unreadIds);
+    myNotifs.forEach(n => { if (unreadIds.includes(n.id)) n.is_read = true; });
+    updateNotifBadge();
+  }
+}
+
+/* ── PROFILE ── */
+function renderProfile() {
+  const el = document.getElementById('profileContent');
+  const u = currentUser;
+  el.innerHTML = `
+    <div class="card" style="max-width:560px;">
+      <div class="card-title">Данные профиля</div>
+      <div class="profile-block">
+        <div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">${u.name}</span></div>
+        <div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">${u.company}</span></div>
+        <div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val">${u.login}</span></div>
+        <div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">${u.role}</span></div>
+        ${u.directions?.length ? `<div class="profile-row"><span class="profile-key">Направления</span><span class="profile-val">${u.directions.map(d=>`<span class="tag">${d}</span>`).join(' ')}</span></div>` : ''}
+        ${u.audience ? `<div class="profile-row"><span class="profile-key">Целевая аудитория</span><span class="profile-val">${u.audience}</span></div>` : ''}
+        ${u.services ? `<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">${u.services}</span></div>` : ''}
+        ${u.utp      ? `<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">${u.utp}</span></div>` : ''}
+        ${u.notes    ? `<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">${u.notes}</span></div>` : ''}
+      </div>
+      ${u.role !== 'buyer' && !u.profile_ready ? `
+        <div style="margin-top:16px;padding:12px;background:rgba(232,160,64,0.1);border-radius:8px;font-size:13px;color:var(--warn);">
+          ⚠ Профиль не заполнен — матчинг недоступен
+        </div>` : ''}
+    </div>`;
+}
+
+/* ── ADMIN ── */
+async function renderAdmin() {
+  renderAdminParticipants();
+  renderAdminParticipants();
+  const all = await loadAllMeetings();
+  const total     = all.length;
+  const confirmed = all.filter(m => m.status === 'confirmed').length;
+  const pending   = all.filter(m => m.status === 'pending').length;
+
+  document.getElementById('adminStats').innerHTML = `
+    <div class="card stat-box"><div class="stat-num">${total}</div><div class="stat-label">Всего встреч</div></div>
+    <div class="card stat-box"><div class="stat-num" style="color:var(--ok)">${confirmed}</div><div class="stat-label">Подтверждено</div></div>
+    <div class="card stat-box"><div class="stat-num" style="color:var(--warn)">${pending}</div><div class="stat-label">Ожидают</div></div>
+  `;
+
+  // Matrix: sellers × buyers
+  const sellers = allSellers;
+  const buyers  = allBuyers;
+
+  if (!sellers.length || !buyers.length) {
+    document.getElementById('adminMatrix').innerHTML = '<div class="empty">Нет данных</div>';
+    return;
+  }
+
+  let html = '<div class="matrix-wrap"><table class="matrix-table"><thead><tr><th>Селлер</th>';
+  buyers.forEach(b => { html += `<th>${b.name.split(' ')[0]}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  sellers.forEach(s => {
+    html += `<tr><td><b>${s.name}</b><br><small style="color:var(--text-dim)">${s.company}</small></td>`;
+    buyers.forEach(b => {
+      const m = all.find(mt =>
+        (mt.seller_id === s.id || mt.seller?.id === s.id) &&
+        (mt.buyer_id  === b.id || mt.buyer?.id  === b.id)
+      );
+      if (m) {
+        const cls = m.status === 'confirmed' ? 'matrix-cell-ok' : 'matrix-cell-pend';
+        html += `<td class="${cls}">${m.slot?.time_label || '—'}</td>`;
+      } else {
+        html += '<td>—</td>';
+      }
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  document.getElementById('adminMatrix').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// PROPOSE MEETING (seller flow)
+// ══════════════════════════════════════════════
+function openPropose(buyerId) {
+  proposeTarget = allBuyers.find(b => b.id === buyerId);
+  proposeSlotId = null;
+  document.getElementById('proposeSendBtn').disabled = true;
+
+  const initials = proposeTarget.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('proposeBuyerInfo').innerHTML = `
+    <div class="buyer-info" style="padding:12px;background:rgba(26,29,74,0.5);border-radius:8px;">
+      <div class="buyer-avatar">${initials}</div>
+      <div>
+        <div class="buyer-name">${proposeTarget.name}</div>
+        <div class="buyer-company">${proposeTarget.company}</div>
+      </div>
+    </div>`;
+
+  // build slot grid
+  const takenSlots = myMeetings
+    .filter(m => (m.seller_id === currentUser.id || m.seller?.id === currentUser.id) && m.status !== 'declined' && m.status !== 'cancelled')
+    .map(m => m.slot_id);
+
+  document.getElementById('proposeSlots').innerHTML = allSlots.map(s => {
+    const taken = takenSlots.includes(s.id);
+    return `<button class="slot-btn ${taken ? 'taken' : ''}"
+      onclick="${taken ? '' : `selectSlot('${s.id}', this)`}"
+      ${taken ? 'disabled' : ''}>${s.time_label}</button>`;
+  }).join('');
+
+  document.getElementById('modalPropose').style.display = 'flex';
+}
+
+function selectSlot(slotId, btn) {
+  proposeSlotId = slotId;
+  document.querySelectorAll('#proposeSlots .slot-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('proposeSendBtn').disabled = false;
+}
+
+async function sendProposal() {
+  if (!proposeSlotId || !proposeTarget) return;
+  const btn = document.getElementById('proposeSendBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+  const { error } = await sb.from('meetings').insert({
+    seller_id:   currentUser.id,
+    buyer_id:    proposeTarget.id,
+    slot_id:     proposeSlotId,
+    event_id:    EVENT_ID,
+    status:      'pending',
+    proposed_by: 'seller',
+  });
+
+  if (error) {
+    toast('Ошибка: ' + (error.message || 'попробуйте ещё раз'));
+    btn.disabled = false; btn.innerHTML = 'Отправить запрос';
+    return;
+  }
+
+  // Notify buyer
+  await sb.from('notifications').insert({
+    user_id: proposeTarget.id,
+    message: `${currentUser.company} предлагает встречу в ${allSlots.find(s=>s.id===proposeSlotId)?.time_label}`,
+    type: 'meeting_request',
+  });
+
+  await loadMeetings();
+  closeModal('modalPropose');
+  toast('Запрос отправлен ✓');
+  renderBuyers();
+}
+
+// ══════════════════════════════════════════════
+// RESPOND MEETING (buyer flow)
+// ══════════════════════════════════════════════
+function openMeeting(meetingId) {
+  meetingTarget = myMeetings.find(m => m.id === meetingId);
+  altSlotId = null;
+  document.getElementById('altSlotGroup').style.display = 'none';
+
+  const seller = meetingTarget.seller;
+  const slot   = meetingTarget.slot;
+  document.getElementById('meetingDetail').innerHTML = `
+    <div class="profile-block">
+      <div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">${seller?.company}</span></div>
+      <div class="profile-row"><span class="profile-key">Контакт</span><span class="profile-val">${seller?.name}</span></div>
+      <div class="profile-row"><span class="profile-key">Предлагаемое время</span><span class="profile-val" style="color:var(--gold);font-weight:500;">${slot?.time_label}</span></div>
+    </div>`;
+
+  document.getElementById('modalMeeting').style.display = 'flex';
+}
+
+function toggleAltSlot() {
+  const g = document.getElementById('altSlotGroup');
+  const showing = g.style.display !== 'none';
+  if (showing) { g.style.display = 'none'; altSlotId = null; return; }
+
+  // build alt slots (exclude current)
+  const takenSlots = myMeetings
+    .filter(m => (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) && m.status === 'confirmed')
+    .map(m => m.slot_id);
+
+  g.style.display = 'block';
+  document.getElementById('altSlots').innerHTML = allSlots.map(s => {
+    const taken = takenSlots.includes(s.id) || s.id === meetingTarget.slot_id;
+    return `<button class="slot-btn ${taken ? 'taken' : ''}"
+      onclick="${taken ? '' : `selectAltSlot('${s.id}', this)`}"
+      ${taken ? 'disabled' : ''}>${s.time_label}</button>`;
+  }).join('');
+}
+
+function selectAltSlot(slotId, btn) {
+  altSlotId = slotId;
+  document.querySelectorAll('#altSlots .slot-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function respondMeeting(status) {
+  if (!meetingTarget) return;
+
+  const updates = { status, updated_at: new Date().toISOString() };
+  if (status === 'pending' && altSlotId) {
+    updates.alt_slot_id = altSlotId;
+    updates.proposed_by = 'buyer';
+  }
+
+  const { error } = await sb.from('meetings').update(updates).eq('id', meetingTarget.id);
+  if (error) { toast('Ошибка обновления'); return; }
+
+  // Notify seller
+  const slotLabel = allSlots.find(s => s.id === meetingTarget.slot_id)?.time_label;
+  const msgMap = {
+    confirmed: `${currentUser.company} подтвердил встречу в ${slotLabel}`,
+    declined:  `${currentUser.company} отклонил запрос на ${slotLabel}`,
+  };
+  await sb.from('notifications').insert({
+    user_id: meetingTarget.seller_id || meetingTarget.seller?.id,
+    message: msgMap[status] || 'Ответ на запрос встречи',
+    type: 'meeting_' + status,
+  });
+
+  await loadMeetings();
+  closeModal('modalMeeting');
+  toast(status === 'confirmed' ? 'Встреча подтверждена ✓' : 'Запрос отклонён');
+  renderRequests();
+}
+
+// ══════════════════════════════════════════════
+// MATCH REASON
+// ══════════════════════════════════════════════
+function showReason(buyerId) {
+  const m = getMatch(buyerId);
+  document.getElementById('reasonText').textContent = m.reason || 'Подробное обоснование будет доступно после AI-анализа профилей';
+  document.getElementById('modalReason').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════
+// REALTIME
+// ══════════════════════════════════════════════
+function setupRealtime() {
+  realtimeChannel = sb.channel('platform')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async () => {
+      await loadMeetings();
+      render();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, async () => {
+      await loadNotifs();
+    })
+    .subscribe();
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function toast(msg, dur = 3000) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU', { day:'numeric', month:'short' }) + ' ' +
+         d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+
+
+// ══════════════════════════════════════════════
+// ADMIN: CREATE PARTICIPANT
+// ══════════════════════════════════════════════
+
+function generateLogin(company) {
+  const map = {
+    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+    'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+    'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh',
+    'щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+    ' ':''
+  };
+  return company.toLowerCase()
+    .split('').map(c => map[c] !== undefined ? map[c] : c)
+    .join('').replace(/[^a-z0-9]/g,'').slice(0,16);
+}
+
+function generatePassword() {
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  const special = '!@#';
+  let p = upper[Math.floor(Math.random()*upper.length)];
+  for (let i=0;i<5;i++) p += lower[Math.floor(Math.random()*lower.length)];
+  p += digits[Math.floor(Math.random()*digits.length)];
+  p += special[Math.floor(Math.random()*special.length)];
+  return p;
+}
+
+let _generatedPass = '';
+
+function previewLogin(company) {
+  const preview = document.getElementById('loginPreview');
+  if (!company.trim()) { preview.style.display = 'none'; _generatedPass = ''; return; }
+  if (!_generatedPass) _generatedPass = generatePassword();
+  const login = generateLogin(company);
+  document.getElementById('previewLoginVal').textContent = login;
+  document.getElementById('previewPassVal').textContent = _generatedPass;
+  preview.style.display = 'block';
+}
+
+async function createParticipant() {
+  const company = document.getElementById('newCompany').value.trim();
+  const name    = document.getElementById('newName').value.trim();
+  const role    = document.getElementById('newRole').value;
+  if (!company || !name) { toast('Заполни название компании и имя'); return; }
+  const login = generateLogin(company);
+  const pass  = _generatedPass || generatePassword();
+  const { data: existing } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
+  const finalLogin = (existing && existing.length) ? login + Math.floor(Math.random()*8+1) : login;
+  const { error } = await sb.from('users').insert({
+    login: finalLogin, password_hash: pass, role, name, company,
+    event_id: EVENT_ID, profile_ready: false,
+  });
+  if (error) { toast('Ошибка: ' + error.message); return; }
+  showCredentials(finalLogin, pass, name, company, role);
+  document.getElementById('newCompany').value = '';
+  document.getElementById('newName').value = '';
+  document.getElementById('loginPreview').style.display = 'none';
+  _generatedPass = '';
+  await loadUsers();
+  renderAdmin();
+}
+
+function showCredentials(login, pass, name, company, role) {
+  const roleLabel = role === 'seller' ? 'Селлер' : 'Байер';
+  const copyText = 'Логин: ' + login + '\nПароль: ' + pass;
+  const div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.style.display = 'flex';
+  const inner = document.createElement('div');
+  inner.className = 'modal';
+  inner.style.cssText = 'width:420px;text-align:center;';
+  inner.innerHTML =
+    '<div style="font-size:32px;margin-bottom:8px;">✓</div>' +
+    '<div class="modal-title" style="text-align:center;margin-bottom:16px;">Участник создан!</div>' +
+    '<div style="background:rgba(26,29,74,0.8);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">' +
+      '<div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">' + name + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">' + company + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">' + roleLabel + '</span></div>' +
+      '<div class="divider"></div>' +
+      '<div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold);">' + login + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Пароль</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold-lt);">' + pass + '</span></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--warn);margin-bottom:16px;">⚠ Скопируй и отправь участнику — пароль показывается один раз</div>';
+  const btnCopy = document.createElement('button');
+  btnCopy.className = 'btn btn-gold';
+  btnCopy.style.cssText = 'width:100%;justify-content:center;margin-bottom:8px;';
+  btnCopy.textContent = 'Скопировать данные';
+  btnCopy.onclick = function() {
+    navigator.clipboard.writeText(copyText);
+    btnCopy.textContent = '✓ Скопировано!';
+    setTimeout(function(){ btnCopy.textContent = 'Скопировать данные'; }, 2000);
+  };
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-outline';
+  btnClose.style.cssText = 'width:100%;justify-content:center;';
+  btnClose.textContent = 'Закрыть';
+  btnClose.onclick = function() { div.remove(); };
+  inner.appendChild(btnCopy);
+  inner.appendChild(btnClose);
+  div.appendChild(inner);
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
+}
+
+async function renderAdminParticipants() {
+  const el = document.getElementById('adminParticipants');
+  if (!el) return;
+  const all = [...allSellers, ...allBuyers].sort((a,b) => {
+    if (a.role !== b.role) return a.role === 'seller' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  if (!all.length) { el.innerHTML = '<div class="empty">Нет участников</div>'; return; }
+  el.innerHTML = all.map(function(u) {
+    const initials = u.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+    const roleCls  = u.role === 'seller' ? 'role-seller' : 'role-buyer';
+    const roleLabel= u.role === 'seller' ? 'SELLER' : 'БАЙЕР';
+    const avatarStyle = u.role === 'buyer' ? 'background:rgba(76,175,130,0.15);color:var(--ok);' : '';
+    return '<div class="buyer-item">' +
+      '<div class="buyer-info">' +
+        '<div class="buyer-avatar" style="' + avatarStyle + '">' + initials + '</div>' +
+        '<div>' +
+          '<div class="buyer-name">' + u.name + ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span></div>' +
+          '<div class="buyer-company">' + u.company + ' · логин: <span style="font-family:monospace;color:var(--gold);">' + u.login + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<button class="btn btn-danger btn-sm" onclick="deleteParticipant(\'' + u.id + '\',\'' + u.name.replace(/'/g,"\\'") + '\')">Удалить</button>' +
+    '</div>';
+  }).join('');
+}
+
+async function deleteParticipant(id, name) {
+  if (!confirm('Удалить участника ' + name + '? Все его встречи тоже удалятся.')) return;
+  await sb.from('meetings').delete().or('seller_id.eq.' + id + ',buyer_id.eq.' + id);
+  await sb.from('users').delete().eq('id', id);
+  await loadUsers();
+  renderAdmin();
+  toast('Участник удалён');
+}
+
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+(async () => {
+  const ok = await checkSession();
+  if (ok) {
+    await startApp();
+  } else {
+    document.getElementById('loginPage').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>
