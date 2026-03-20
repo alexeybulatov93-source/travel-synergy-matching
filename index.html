@@ -1064,7 +1064,7 @@ function renderProfile() {
       (isBuyer ?
         '<div class="divider"></div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-          '<div class="form-group" style="margin:0;"><label class="form-label">Аудитория клиентов</label>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
             '<input id="pAudience" class="form-input" value="' + esc(u.audience||'') + '" placeholder="Семьи, корпоративные..."></div>' +
           '<div class="form-group" style="margin:0;"><label class="form-label">Средний чек</label>' +
             '<input id="pServices" class="form-input" value="' + esc(u.services||'') + '" placeholder="Средний, премиум..."></div>' +
@@ -1145,9 +1145,18 @@ function updateHeaderAvatar() {
 async function showBuyerCard(buyerId) {
   const buyer = allBuyers.find(b => b.id === buyerId);
   if (!buyer) return;
-  const { data: people } = await sb.from('users')
-    .select('id,name,notes,telegram_id,phone,email,city')
-    .eq('company', buyer.company).eq('event_id', EVENT_ID).eq('role','buyer').order('name');
+  let people = [];
+  try {
+    const { data: pd } = await sb.from('users')
+      .select('id,name,notes,telegram_id,phone,email,city')
+      .eq('company', buyer.company).eq('event_id', EVENT_ID).eq('role','buyer').order('name');
+    people = pd || [];
+  } catch(e) {
+    const { data: pd } = await sb.from('users')
+      .select('id,name,notes,telegram_id')
+      .eq('company', buyer.company).eq('event_id', EVENT_ID).eq('role','buyer').order('name');
+    people = pd || [];
+  }
   const logoHtml = buyer.logo_url
     ? '<img src="' + buyer.logo_url + '" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '';
   const dirs = (buyer.directions && buyer.directions.length)
@@ -1213,9 +1222,18 @@ async function showBuyerCard(buyerId) {
 async function showSellerCard(sellerId) {
   const seller = allSellers.find(s => s.id === sellerId);
   if (!seller) { toast('Информация о продавце не найдена'); return; }
-  const { data: people } = await sb.from('users')
-    .select('id,name,notes,telegram_id,phone,email,city')
-    .eq('company', seller.company).eq('event_id', EVENT_ID).eq('role','seller').order('name');
+  let people = [];
+  try {
+    const { data: pd } = await sb.from('users')
+      .select('id,name,notes,telegram_id,phone,email,city')
+      .eq('company', seller.company).eq('event_id', EVENT_ID).eq('role','seller').order('name');
+    people = pd || [];
+  } catch(e) {
+    const { data: pd } = await sb.from('users')
+      .select('id,name,notes,telegram_id')
+      .eq('company', seller.company).eq('event_id', EVENT_ID).eq('role','seller').order('name');
+    people = pd || [];
+  }
   const logoHtml = seller.logo_url
     ? '<img src="' + seller.logo_url + '" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '';
   const dirs = (seller.directions && seller.directions.length)
@@ -1412,12 +1430,14 @@ async function openAddPersonModal(btn) {
   const company = btn.dataset.company;
   const role    = btn.dataset.role;
 
-  // Get shared credentials from existing company members
+  // Get shared password from existing company members (login will be unique per person)
   const { data: existing } = await sb.from('users')
     .select('login,password_hash').eq('company', company).eq('event_id', EVENT_ID).neq('role','admin').limit(1);
-  const isNew = !existing || !existing.length;
-  const sharedLogin = isNew ? generateLogin(company) : existing[0].login;
-  const sharedPass  = isNew ? generatePassword()     : existing[0].password_hash;
+  const isNew      = !existing || !existing.length;
+  const sharedPass = isNew ? generatePassword() : existing[0].password_hash;
+
+  // Generate a unique login base
+  const baseLogin = generateLogin(company);
 
   const roleCls = role === 'seller' ? 'role-seller' : 'role-buyer';
   const roleRu  = role === 'seller' ? 'SELLER' : 'БАЙЕР';
@@ -1425,8 +1445,8 @@ async function openAddPersonModal(btn) {
   const div = document.createElement('div');
   div.className = 'modal-overlay'; div.id = 'modalAddPerson'; div.style.display = 'flex';
   div.innerHTML =
-    '<div class="modal" style="width:460px;">' +
-      '<div class="modal-title">' + (isNew ? 'Новая компания' : 'Добавить представителя') + '</div>' +
+    '<div class="modal" style="width:480px;">' +
+      '<div class="modal-title">' + (isNew ? 'Новая компания · первый участник' : 'Добавить представителя') + '</div>' +
       (isNew
         ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
             '<div class="form-group"><label class="form-label">Название компании</label>' +
@@ -1434,25 +1454,27 @@ async function openAddPersonModal(btn) {
             '<div class="form-group"><label class="form-label">Роль</label>' +
               '<select id="ap_role" class="form-input"><option value="seller">Селлер</option><option value="buyer">Байер</option></select></div>' +
           '</div>'
-        : '<div style="padding:8px 12px;background:rgba(178,144,106,0.1);border-radius:8px;margin-bottom:12px;font-size:13px;">' +
-            '<span style="color:var(--text-dim);">Компания: </span>' +
-            '<b style="color:var(--gold);">' + esc(company) + '</b>' +
+        : '<div style="padding:8px 12px;background:rgba(178,144,106,0.1);border-radius:8px;margin-bottom:14px;font-size:13px;">' +
+            'Компания: <b style="color:var(--gold);">' + esc(company) + '</b>' +
             ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleRu + '</span>' +
           '</div>' +
           '<input id="ap_company" type="hidden" value="' + esc(company) + '">' +
           '<input id="ap_role" type="hidden" value="' + esc(role) + '">') +
-      '<div class="form-group"><label class="form-label">Имя контакта</label>' +
-        '<input id="ap_name" class="form-input" placeholder="Анна Морозова"></div>' +
-      '<div style="padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;margin-bottom:4px;">' +
-        (!isNew ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Общий логин компании:</div>' : '') +
-        '<div style="display:flex;gap:12px;align-items:center;">' +
-          '<span style="color:var(--text-dim);">Логин:</span>' +
-          '<b id="ap_loginVal" style="font-family:monospace;color:var(--gold);">' + esc(sharedLogin) + '</b>' +
-          '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
-          '<b style="font-family:monospace;color:var(--gold-lt);">' + esc(sharedPass) + '</b>' +
-        '</div>' +
+      // Fields: name + position on one row, phone + email on next
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Имя и фамилия</label>' +
+          '<input id="ap_name" class="form-input" placeholder="Анна Морозова"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Должность</label>' +
+          '<input id="ap_position" class="form-input" placeholder="Менеджер, директор..."></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Телефон / WhatsApp</label>' +
+          '<input id="ap_phone" class="form-input" placeholder="+7 999 123-45-67"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Email</label>' +
+          '<input id="ap_email" class="form-input" placeholder="name@company.ru"></div>' +
       '</div>' +
-      '<input id="ap_login_val" type="hidden" value="' + esc(sharedLogin) + '">' +
+      // Password info
+      '<div style="margin-top:12px;padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:12px;color:var(--text-dim);">' +
+        (!isNew ? 'Пароль компании: <b style="font-family:monospace;color:var(--gold-lt);">' + esc(sharedPass) + '</b> — логин будет назначен автоматически' : 'Логин и пароль будут созданы автоматически') +
+      '</div>' +
       '<input id="ap_pass_val" type="hidden" value="' + esc(sharedPass) + '">' +
       '<input id="ap_is_new" type="hidden" value="' + (isNew ? '1':'0') + '">' +
       '<div class="modal-actions" style="margin-top:16px;">' +
@@ -1465,37 +1487,37 @@ async function openAddPersonModal(btn) {
 }
 
 function apPreviewLogin(val) {
-  const el = document.getElementById('ap_loginVal');
-  if (el) el.textContent = generateLogin(val) || '—';
+  // no-op now, kept for compatibility
 }
 
 async function createPersonFromModal() {
-  const company = document.getElementById('ap_company').value.trim();
-  const name    = document.getElementById('ap_name').value.trim();
-  const role    = document.getElementById('ap_role').value;
-  const login   = document.getElementById('ap_login_val').value;
-  const pass    = document.getElementById('ap_pass_val').value;
-  const isNew   = document.getElementById('ap_is_new').value === '1';
+  const company  = document.getElementById('ap_company').value.trim();
+  const name     = document.getElementById('ap_name').value.trim();
+  const role     = document.getElementById('ap_role').value;
+  const pass     = document.getElementById('ap_pass_val').value;
+  const position = (document.getElementById('ap_position') || {value:''}).value.trim();
+  const phone    = (document.getElementById('ap_phone')    || {value:''}).value.trim();
+  const email    = (document.getElementById('ap_email')    || {value:''}).value.trim();
 
   if (!company || !name) { toast('Заполни название компании и имя'); return; }
 
-  let finalLogin = login;
-  if (isNew) {
-    const { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
-    if (dup && dup.length) finalLogin = login + Math.floor(Math.random()*8+2);
-  }
+  // Get the shared company login (same for all members)
+  const { data: existing } = await sb.from('users')
+    .select('login').eq('company', company).eq('event_id', EVENT_ID).neq('role','admin').limit(1);
+  const sharedLogin = (existing && existing.length) ? existing[0].login : generateLogin(company);
 
   const { error } = await sb.from('users').insert({
-    login: finalLogin, password_hash: pass, role, name, company,
+    login: sharedLogin, password_hash: pass, role, name, company,
+    notes: position, phone, email,
     event_id: EVENT_ID, profile_ready: false,
   });
   if (error) { toast('Ошибка: ' + error.message); return; }
 
   const modal = document.getElementById('modalAddPerson');
   if (modal) modal.remove();
-  showCredentials(finalLogin, pass, name, company, role);
+  showCredentials(sharedLogin, pass, name, company, role);
   await loadUsers();
-  renderAdmin();
+  if (currentUser.role === 'admin') renderAdmin();
 }
 
 // ── Admin: Edit participant ──
