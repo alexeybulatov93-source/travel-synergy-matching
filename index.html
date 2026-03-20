@@ -488,7 +488,7 @@
 
     <!-- ── SELLER: Buyers list ── -->
     <div id="tabBuyers" class="page">
-      <div class="section-title">Байеры</div>
+      <div class="section-title">Байеры · матчинг</div>
       <div id="buyersList"></div>
     </div>
 
@@ -527,44 +527,14 @@
       <div class="section-title">Админ · управление</div>
       <div class="grid-3" style="margin-bottom:24px;" id="adminStats"></div>
 
-      <!-- Create participant -->
-      <div class="card" style="margin-bottom:20px;">
-        <div class="card-title">Добавить участника</div>
-        <div class="admin-create-form" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Название компании</label>
-            <input id="newCompany" type="text" class="form-input" placeholder="Maldives Pro"
-              oninput="previewLogin(this.value)">
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Имя контакта</label>
-            <input id="newName" type="text" class="form-input" placeholder="Анна Морозова">
-          </div>
-          <div class="form-group" style="margin:0;">
-            <label class="form-label">Роль</label>
-            <select id="newRole" class="form-input">
-              <option value="seller">Селлер</option>
-              <option value="buyer">Байер</option>
-            </select>
-          </div>
-          <button class="btn btn-gold" onclick="createParticipant()" style="white-space:nowrap;height:42px;align-self:end;">
-            + Создать
-          </button>
-        </div>
-        <div id="loginPreview" style="margin-top:12px;display:none;">
-          <div style="display:flex;gap:12px;align-items:center;padding:12px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;">
-            <span style="color:var(--text-dim);">Логин:</span>
-            <span id="previewLoginVal" style="color:var(--gold);font-weight:500;font-family:monospace;"></span>
-            <span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>
-            <span id="previewPassVal" style="color:var(--gold-lt);font-weight:500;font-family:monospace;"></span>
-            <span style="color:var(--text-dim);font-size:11px;margin-left:4px;">(сгенерирован, сохранится после создания)</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Participants list -->
       <div class="card" style="margin-bottom:20px;">
-        <div class="card-title">Участники мероприятия</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;">Участники мероприятия</div>
+          <button class="btn btn-gold btn-sm" onclick="openAddNewCompanyModal()" style="white-space:nowrap;">
+            + Новая компания
+          </button>
+        </div>
         <div id="adminParticipants"></div>
       </div>
 
@@ -727,14 +697,11 @@ async function startApp() {
   rb.textContent = roleLabel[currentUser.role];
   rb.className = 'role-badge ' + roleMap[currentUser.role];
 
-  // tabs
-  buildTabs();
-
-  // load data
+  // load data FIRST, then build tabs (so renderBuyers has data when first called)
   await Promise.all([loadSlots(), loadUsers(), loadMeetings(), loadNotifs(), loadMatches()]);
 
-  // render
-  render();
+  // tabs (after data is ready)
+  buildTabs();
   setupRealtime();
 }
 
@@ -854,7 +821,11 @@ function renderBuyers() {
 
   let sorted = [...buyers];
   if (currentUser.role === 'seller') {
-    sorted.sort(function(a,b) { return a.company.localeCompare(b.company, 'ru'); });
+    sorted.sort(function(a,b) {
+      const ma = getMatch(a.id); const mb = getMatch(b.id);
+      if (mb.rate !== ma.rate) return mb.rate - ma.rate;
+      return a.company.localeCompare(b.company, 'ru');
+    });
   }
 
   el.innerHTML = sorted.map(function(b) {
@@ -895,7 +866,7 @@ function renderBuyers() {
         '</div>' +
       '</div>' +
       '<div class="buyer-right" style="flex-shrink:0;">' +
-        
+        (m.rate > 0 ? '<div class="match-badge ' + matchCls + '"><span class="match-dot ' + dotCls + '"></span>' + m.rate + '%</div>' : '') +
         (currentUser.role === 'seller'
           ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" ' + btnDisabled + '>' + btnLabel + '</button>'
           : '') +
@@ -1015,7 +986,6 @@ async function renderNotifications() {
 
 /* ── ADMIN ── */
 async function renderAdmin() {
-  renderAdminParticipants();
   renderAdminParticipants();
   const all = await loadAllMeetings();
   const total     = all.length;
@@ -1559,7 +1529,7 @@ async function renderAdminParticipants() {
           '</div>',
           logoHtml,
           buildBtn('logo-company', '', '', firstUser.id),
-          '<button class="btn btn-gold btn-sm" onclick="addSiblingFromCompany(this)" data-company="' + company.replace(/"/g, '') + '" data-role="' + group.role + '" style="font-size:11px;white-space:nowrap;">+ Добавить</button>',
+          '<button class="btn btn-gold btn-sm" onclick="openAddPersonModal(this)" data-company="' + company.replace(/"/g, '') + '" data-role="' + group.role + '" style="font-size:11px;white-space:nowrap;">+ Добавить</button>',
         '</div>',
         peopleRows,
       '</div>'
@@ -1634,7 +1604,7 @@ async function openEditParticipant(userId) {
       : '') +
       '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">' +
         '<span>Участников от этой компании: <b style="color:var(--gold);">' + (sibCount+1) + '</b></span>' +
-        '<button class="btn btn-outline btn-sm" onclick="addSiblingParticipant(\'' + u.company + '\',\'' + u.role + '\');document.getElementById(\'modalEditParticipant\').remove();" style="font-size:11px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="openAddPersonModalByData(this)" data-company="' + escHtml(u.company) + '" data-role="' + u.role + '" style="font-size:11px;">' +
           '+ Добавить ещё от этой компании' +
         '</button>' +
       '</div>' +
@@ -2034,20 +2004,119 @@ function quickCopy(btn) {
 
 
 
-function addSiblingParticipant(company, role) {
-  // Pre-fill the create form with company name and role
-  const companyInput = document.getElementById('newCompany');
-  const roleSelect   = document.getElementById('newRole');
-  if (companyInput) {
-    companyInput.value = company;
-    previewLogin(company);
-  }
-  if (roleSelect) roleSelect.value = role;
-  // Scroll to create form
-  companyInput && companyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  companyInput && companyInput.focus();
-  toast('Компания заполнена — введите имя нового участника');
+function openAddNewCompanyModal() {
+  var pass = generatePassword();
+  var div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.id = 'modalAddPerson';
+  div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:480px;">' +
+      '<div class="modal-title">Новая компания + участник</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">Название компании</label>' +
+          '<input id="ap_company" class="form-input" placeholder="Maldives Pro" oninput="apPreviewLogin(this.value)"></div>' +
+        '<div class="form-group"><label class="form-label">Роль</label>' +
+          '<select id="ap_role" class="form-input"><option value="seller">Селлер</option><option value="buyer">Байер</option></select></div>' +
+        '<div class="form-group" style="grid-column:1/-1;"><label class="form-label">Имя контакта</label>' +
+          '<input id="ap_name" class="form-input" placeholder="Анна Морозова"></div>' +
+      '</div>' +
+      '<div id="ap_preview" style="margin-top:4px;padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;display:flex;gap:12px;align-items:center;">' +
+        '<span style="color:var(--text-dim);">Логин:</span>' +
+        '<span id="ap_loginVal" style="color:var(--gold);font-family:monospace;font-weight:500;">—</span>' +
+        '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
+        '<span style="color:var(--gold-lt);font-family:monospace;font-weight:500;">' + pass + '</span>' +
+      '</div>' +
+      '<input id="ap_pass_hidden" type="hidden" value="' + pass + '">' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalAddPerson\').remove()">Отмена</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="createParticipantFromModal()">+ Создать</button>' +
+      '</div>' +
+    '</div>';
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
 }
+
+function openAddPersonModal(btn) {
+  var company = btn.dataset.company;
+  var role = btn.dataset.role;
+  var pass = generatePassword();
+  var div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.id = 'modalAddPerson';
+  div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:480px;">' +
+      '<div class="modal-title">Добавить представителя</div>' +
+      '<div style="margin-bottom:14px;padding:8px 12px;background:rgba(178,144,106,0.1);border-radius:8px;font-size:13px;">' +
+        '<span style="color:var(--text-dim);">Компания: </span>' +
+        '<b style="color:var(--gold);">' + escHtml(company) + '</b>' +
+        ' <span class="role-badge ' + (role==='seller'?'role-seller':'role-buyer') + '" style="font-size:9px;padding:1px 6px;">' + (role==='seller'?'SELLER':'БАЙЕР') + '</span>' +
+      '</div>' +
+      '<input id="ap_company" type="hidden" value="' + escHtml(company) + '">' +
+      '<input id="ap_role" type="hidden" value="' + escHtml(role) + '">' +
+      '<div class="form-group"><label class="form-label">Имя контакта</label>' +
+        '<input id="ap_name" class="form-input" placeholder="Имя Фамилия"></div>' +
+      '<div id="ap_preview" style="margin-top:4px;padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;display:flex;gap:12px;align-items:center;">' +
+        '<span style="color:var(--text-dim);">Логин:</span>' +
+        '<span id="ap_loginVal" style="color:var(--gold);font-family:monospace;font-weight:500;">' + generateLogin(company) + '</span>' +
+        '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
+        '<span style="color:var(--gold-lt);font-family:monospace;font-weight:500;">' + pass + '</span>' +
+      '</div>' +
+      '<input id="ap_pass_hidden" type="hidden" value="' + pass + '">' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalAddPerson\').remove()">Отмена</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="createParticipantFromModal()">+ Создать</button>' +
+      '</div>' +
+    '</div>';
+  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
+}
+
+function apPreviewLogin(val) {
+  var el = document.getElementById('ap_loginVal');
+  if (el) el.textContent = generateLogin(val) || '—';
+}
+
+async function createParticipantFromModal() {
+  var companyEl = document.getElementById('ap_company');
+  var nameEl    = document.getElementById('ap_name');
+  var roleEl    = document.getElementById('ap_role');
+  var passEl    = document.getElementById('ap_pass_hidden');
+
+  var company = (companyEl.value || '').trim();
+  var name    = (nameEl.value || '').trim();
+  var role    = roleEl.value || 'seller';
+  var pass    = passEl.value || generatePassword();
+
+  if (!company || !name) { toast('Заполни название компании и имя'); return; }
+
+  if (role === 'seller') {
+    var { data: existing } = await sb.from('users')
+      .select('id').eq('company', company).eq('event_id', EVENT_ID).eq('role','seller');
+    if (existing && existing.length >= 2) {
+      if (!confirm('От компании "' + company + '" уже ' + existing.length + ' участника. Добавить ещё?')) return;
+    }
+  }
+
+  var login = generateLogin(company);
+  var { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
+  var finalLogin = (dup && dup.length) ? login + Math.floor(Math.random()*8+2) : login;
+
+  var { error } = await sb.from('users').insert({
+    login: finalLogin, password_hash: pass, role: role, name: name, company: company,
+    event_id: EVENT_ID, profile_ready: false,
+  });
+  if (error) { toast('Ошибка: ' + error.message); return; }
+
+  var modal = document.getElementById('modalAddPerson');
+  if (modal) modal.remove();
+  showCredentials(finalLogin, pass, name, company, role);
+  await loadUsers();
+  renderAdmin();
+}
+
+
 
 
 
@@ -2155,10 +2224,17 @@ function buildBtn(type, login, pass, uid) {
   return '';
 }
 
-function addSiblingFromCompany(btn) {
+function openAddPersonModalByData(btn) {
   var company = btn.dataset.company;
   var role = btn.dataset.role;
-  addSiblingParticipant(company, role);
+  // close edit modal if still open
+  var em = document.getElementById('modalEditParticipant');
+  if (em) em.remove();
+  openAddPersonModal({ dataset: { company: company, role: role } });
+}
+
+function addSiblingFromCompany(btn) {
+  openAddPersonModal(btn);
 }
 
 // ══════════════════════════════════════════════
