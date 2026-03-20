@@ -469,7 +469,7 @@
       <div class="logo-label">SYNERGY<br>WORKSHOP</div>
     </div>
     <div class="header-right">
-      <div id="notifBell" style="cursor:pointer;position:relative;display:flex;align-items:center;" onclick="switchTab('notifications&quot;)">
+      <div id="notifBell" style="cursor:pointer;position:relative;display:flex;align-items:center;" onclick="switchTab('notifications')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-dim)'"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="notifCount" class="notif-count" style="display:none;position:absolute;top:-4px;right:-4px;"></span>
       </div>
       <div class="user-pill">
@@ -527,14 +527,44 @@
       <div class="section-title">Админ · управление</div>
       <div class="grid-3" style="margin-bottom:24px;" id="adminStats"></div>
 
-      <!-- Participants list -->
+      <!-- Create participant -->
       <div class="card" style="margin-bottom:20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div class="card-title" style="margin-bottom:0;">Участники мероприятия</div>
-          <button class="btn btn-gold btn-sm" onclick="openAddNewCompanyModal()" style="white-space:nowrap;">
-            + Новая компания
+        <div class="card-title">Добавить участника</div>
+        <div class="admin-create-form" style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Название компании</label>
+            <input id="newCompany" type="text" class="form-input" placeholder="Maldives Pro"
+              oninput="previewLogin(this.value)">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Имя контакта</label>
+            <input id="newName" type="text" class="form-input" placeholder="Анна Морозова">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Роль</label>
+            <select id="newRole" class="form-input">
+              <option value="seller">Селлер</option>
+              <option value="buyer">Байер</option>
+            </select>
+          </div>
+          <button class="btn btn-gold" onclick="createParticipant()" style="white-space:nowrap;height:42px;align-self:end;">
+            + Создать
           </button>
         </div>
+        <div id="loginPreview" style="margin-top:12px;display:none;">
+          <div style="display:flex;gap:12px;align-items:center;padding:12px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;">
+            <span style="color:var(--text-dim);">Логин:</span>
+            <span id="previewLoginVal" style="color:var(--gold);font-weight:500;font-family:monospace;"></span>
+            <span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>
+            <span id="previewPassVal" style="color:var(--gold-lt);font-weight:500;font-family:monospace;"></span>
+            <span style="color:var(--text-dim);font-size:11px;margin-left:4px;">(сгенерирован, сохранится после создания)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Participants list -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Участники мероприятия</div>
         <div id="adminParticipants"></div>
       </div>
 
@@ -567,7 +597,7 @@
     </div>
     <div id="proposeAltMsg" style="display:none;font-size:12px;color:var(--warn);margin-top:8px;"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPropose&quot;)">Отмена</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPropose')">Отмена</button>
       <button class="btn btn-gold btn-sm" id="proposeSendBtn" onclick="sendProposal()" disabled>Отправить запрос</button>
     </div>
   </div>
@@ -583,10 +613,10 @@
       <div id="altSlots" class="slot-grid"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMeeting&quot;)">Закрыть</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMeeting')">Закрыть</button>
       <button class="btn btn-outline btn-sm" id="btnAltSlot" onclick="toggleAltSlot()">⏱ Другое время</button>
-      <button class="btn btn-danger btn-sm" id="btnDecline" onclick="respondMeeting('declined&quot;)">Отклонить</button>
-      <button class="btn btn-ok btn-sm" id="btnConfirm" onclick="respondMeeting('confirmed&quot;)">Подтвердить ✓</button>
+      <button class="btn btn-danger btn-sm" id="btnDecline" onclick="respondMeeting('declined')">Отклонить</button>
+      <button class="btn btn-ok btn-sm" id="btnConfirm" onclick="respondMeeting('confirmed')">Подтвердить ✓</button>
     </div>
   </div>
 </div>
@@ -597,68 +627,73 @@
     <div class="modal-title">Почему этот матч?</div>
     <div id="reasonText" style="font-size:14px;line-height:1.6;color:var(--text);"></div>
     <div class="modal-actions">
-      <button class="btn btn-gold btn-sm" onclick="closeModal('modalReason&quot;)">Понятно</button>
+      <button class="btn btn-gold btn-sm" onclick="closeModal('modalReason')">Понятно</button>
     </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// CONFIG — замени на свои ключи из Supabase
-// ══════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// TRAVEL SYNERGY · Corona Travel · Clean rewrite
+// ═══════════════════════════════════════════════════════
+
 const SUPABASE_URL = 'https://snurfexcbscqxykujweq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNudXJmZXhjYnNjcXh5a3Vqd2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjkwMTEsImV4cCI6MjA4OTUwNTAxMX0.sRvMfgrR0m6AS-57_3FvzcRnuMfTkUbAf5gnK94AroY';
 const EVENT_ID     = '00000000-0000-0000-0000-000000000001';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let currentUser = null;
-let allSlots    = [];
-let allBuyers   = [];
-let allSellers  = [];
-let myMeetings  = [];
-let myMatches   = [];
-let myNotifs    = [];
+// ── State ──
+let currentUser  = null;
+let allBuyers    = [];
+let allSellers   = [];
+let allSlots     = [];
+let myMeetings   = [];
+let myMatches    = [];
+let myNotifs     = [];
+let realtimeChannel = null;
+let activeTab    = null;
+let participantFilter = 'all';
 
-// getMatch — возвращает {rate, reason} для байера по его id
+// ── Utils ──
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escHtml(s) { return esc(s); }
+
+function ini(name) {
+  return (name||'?').split(' ').map(w => w[0]||'').join('').slice(0,2).toUpperCase();
+}
+
+function toast(msg, dur) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur || 3000);
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function closeModal(id) { const e = document.getElementById(id); if(e) e.style.display = 'none'; }
+
 function getMatch(buyerId) {
   if (!myMatches || !myMatches.length) return { rate: 0, reason: '' };
-  const m = myMatches.find(function(x) { return x.buyer_id === buyerId; });
+  const m = myMatches.find(x => x.buyer_id === buyerId);
   return m ? { rate: m.match_rate || 0, reason: m.match_reason || '' } : { rate: 0, reason: '' };
 }
 
-// modal state
-let proposeTarget   = null;  // buyer user object
-let proposeSlotId   = null;
-let meetingTarget   = null;  // meeting object
-let altSlotId       = null;
+// ── Login ──
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+}
 
-// realtime channels
-let realtimeChannel = null;
-
-// ══════════════════════════════════════════════
-// LOGIN / LOGOUT
-// ══════════════════════════════════════════════
 async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const login = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pass  = document.getElementById('loginPass').value.trim();
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
+  if (!login || !pass) { showLoginError('Заполните логин и пароль'); return; }
+  document.getElementById('loginError').style.display = 'none';
 
-  if (!email || !pass) { showLoginError('Заполните email и пароль'); return; }
-
-  const login = email.toLowerCase().trim();
-  const { data, error } = await sb
-    .from('users')
-    .select('*')
-    .eq('login', login)
-    .eq('password_hash', pass)
-    .eq('event_id', EVENT_ID)
-    .single();
-
+  const { data, error } = await sb.from('users')
+    .select('*').eq('login', login).eq('password_hash', pass).eq('event_id', EVENT_ID).single();
   if (error || !data) { showLoginError('Неверный логин или пароль'); return; }
 
   currentUser = data;
@@ -666,9 +701,14 @@ async function doLogin() {
   await startApp();
 }
 
-function showLoginError(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = msg; el.style.display = 'block';
+function togglePass() {
+  const inp = document.getElementById('loginPass');
+  const icon = document.getElementById('eyeIcon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
 }
 
 async function checkSession() {
@@ -688,33 +728,67 @@ function doLogout() {
   currentUser = null;
 }
 
-// ══════════════════════════════════════════════
-// APP INIT
-// ══════════════════════════════════════════════
+// ── App init ──
 async function startApp() {
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('appRoot').style.display = 'flex';
 
-  // header
-  const roleMap = { seller:'role-seller', buyer:'role-buyer', admin:'role-admin' };
+  const roleMap   = { seller:'role-seller', buyer:'role-buyer', admin:'role-admin' };
   const roleLabel = { seller:'SELLER', buyer:'БАЙЕР', admin:'ADMIN' };
   document.getElementById('userName').textContent = currentUser.name;
-  setTimeout(updateHeaderAvatar, 100);
   const rb = document.getElementById('roleLabel');
   rb.textContent = roleLabel[currentUser.role];
   rb.className = 'role-badge ' + roleMap[currentUser.role];
 
-  // load data FIRST, then build tabs (so renderBuyers has data when first called)
   await Promise.all([loadSlots(), loadUsers(), loadMeetings(), loadNotifs(), loadMatches()]);
-
-  // tabs (after data is ready)
   buildTabs();
   setupRealtime();
 }
 
-// ══════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════
+// ── Data loaders ──
+async function loadSlots() {
+  const { data } = await sb.from('slots').select('*').eq('event_id', EVENT_ID).order('sort_order');
+  allSlots = data || [];
+}
+async function loadUsers() {
+  const { data } = await sb.from('users').select('*').eq('event_id', EVENT_ID);
+  allBuyers  = (data || []).filter(u => u.role === 'buyer');
+  allSellers = (data || []).filter(u => u.role === 'seller');
+}
+async function loadMeetings() {
+  const { data } = await sb.from('meetings')
+    .select('*, slot:slot_id(*), alt_slot:alt_slot_id(*), seller:seller_id(id,name,company,role), buyer:buyer_id(id,name,company,role)')
+    .eq('event_id', EVENT_ID)
+    .or(`seller_id.eq.${currentUser.id},buyer_id.eq.${currentUser.id}`);
+  myMeetings = data || [];
+}
+async function loadAllMeetings() {
+  const { data } = await sb.from('meetings')
+    .select('*, slot:slot_id(*), seller:seller_id(id,name,company), buyer:buyer_id(id,name,company)')
+    .eq('event_id', EVENT_ID);
+  return data || [];
+}
+async function loadMatches() {
+  if (currentUser.role !== 'seller' && currentUser.role !== 'admin') { myMatches = []; return; }
+  const col = currentUser.role === 'seller' ? 'seller_id' : 'event_id';
+  const val = currentUser.role === 'seller' ? currentUser.id : EVENT_ID;
+  const { data } = await sb.from('matches').select('*').eq(col, val);
+  myMatches = data || [];
+}
+async function loadNotifs() {
+  const { data } = await sb.from('notifications')
+    .select('*').eq('user_id', currentUser.id).order('sent_at', { ascending: false }).limit(30);
+  myNotifs = data || [];
+  updateNotifBadge();
+}
+function updateNotifBadge() {
+  const unread = myNotifs.filter(n => !n.is_read).length;
+  const el = document.getElementById('notifCount');
+  if (unread > 0) { el.style.display = 'flex'; el.textContent = unread; }
+  else { el.style.display = 'none'; }
+}
+
+// ── Tabs ──
 const TABS = {
   seller: [
     { id:'buyers',        label:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Байеры' },
@@ -734,13 +808,11 @@ const TABS = {
   ],
 };
 
-let activeTab = null;
-
 function buildTabs() {
   const tabs = TABS[currentUser.role] || [];
-  const bar  = document.getElementById('tabBar');
+  const bar = document.getElementById('tabBar');
   bar.innerHTML = tabs.map(t =>
-    `<button class="tab" data-tab="${t.id}" onclick="switchTab('${t.id}&quot;)">${t.label}</button>`
+    `<button class="tab" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.label}</button>`
   ).join('');
   switchTab(tabs[0].id);
 }
@@ -752,10 +824,8 @@ function switchTab(id) {
   renderTab(id);
 }
 
-function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
 function renderTab(id) {
-  if (id === 'buyers')        { renderBuyers(); return; }
+  if (id === 'buyers')        renderBuyers();
   if (id === 'schedule')      renderSchedule();
   if (id === 'requests')      renderRequests();
   if (id === 'notifications') renderNotifications();
@@ -763,64 +833,11 @@ function renderTab(id) {
   if (id === 'admin')         renderAdmin();
 }
 
-// ══════════════════════════════════════════════
-// DATA LOADERS
-// ══════════════════════════════════════════════
-async function loadSlots() {
-  const { data } = await sb.from('slots').select('*').eq('event_id', EVENT_ID).order('sort_order');
-  allSlots = data || [];
-}
-
-async function loadUsers() {
-  const { data } = await sb.from('users').select('*').eq('event_id', EVENT_ID);
-  allBuyers  = (data || []).filter(u => u.role === 'buyer');
-  allSellers = (data || []).filter(u => u.role === 'seller');
-}
-
-async function loadMeetings() {
-  const { data } = await sb.from('meetings')
-    .select('*, slot:slot_id(*), alt_slot:alt_slot_id(*), seller:seller_id(id,name,company,role), buyer:buyer_id(id,name,company,role)')
-    .eq('event_id', EVENT_ID)
-    .or(`seller_id.eq.${currentUser.id},buyer_id.eq.${currentUser.id}`);
-  myMeetings = data || [];
-}
-
-async function loadAllMeetings() {
-  const { data } = await sb.from('meetings')
-    .select('*, slot:slot_id(*), seller:seller_id(id,name,company), buyer:buyer_id(id,name,company)')
-    .eq('event_id', EVENT_ID);
-  return data || [];
-}
-
-async function loadMatches() {
-  if (currentUser.role !== 'seller' && currentUser.role !== 'admin') { myMatches = []; return; }
-  const col = currentUser.role === 'seller' ? 'seller_id' : 'event_id';
-  const val = currentUser.role === 'seller' ? currentUser.id : EVENT_ID;
-  const { data } = await sb.from('matches').select('*').eq(col, val);
-  myMatches = data || [];
-}
-
-async function loadNotifs() {
-  const { data } = await sb.from('notifications')
-    .select('*').eq('user_id', currentUser.id).order('sent_at', { ascending: false }).limit(30);
-  myNotifs = data || [];
-  updateNotifBadge();
-}
-
-function updateNotifBadge() {
-  const unread = myNotifs.filter(n => !n.is_read).length;
-  const el = document.getElementById('notifCount');
-  if (unread > 0) { el.style.display = 'flex'; el.textContent = unread; }
-  else { el.style.display = 'none'; }
-}
-
-// ══════════════════════════════════════════════
-// RENDER FUNCTIONS
-// ══════════════════════════════════════════════
-
 function render() { renderTab(activeTab); }
 
-/* ── BUYERS ── */
+// ════════════════════════════════════════════════
+// BUYERS TAB (Seller view)
+// ════════════════════════════════════════════════
 async function renderBuyers() {
   try {
     const el = document.getElementById('buyersList');
@@ -831,552 +848,642 @@ async function renderBuyers() {
       return;
     }
     const sorted = [...allBuyers].sort((a,b) => a.company.localeCompare(b.company,'ru'));
-
     el.innerHTML = sorted.map(function(b) {
-      const initials = b.company.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      const initials = ini(b.company);
       const existing = myMeetings.find(mt =>
-        (mt.seller_id===currentUser.id||(mt.seller&&mt.seller.id===currentUser.id)) &&
-        (mt.buyer_id===b.id||(mt.buyer&&mt.buyer.id===b.id)));
+        (mt.seller_id === currentUser.id || (mt.seller && mt.seller.id === currentUser.id)) &&
+        (mt.buyer_id  === b.id           || (mt.buyer  && mt.buyer.id  === b.id)));
       const meetBadge = existing
-        ? (existing.status==='confirmed'
+        ? (existing.status === 'confirmed'
             ? '<span style="font-size:11px;color:#4ade80;font-weight:500;">✓ Подтверждено</span>'
             : '<span style="font-size:11px;color:var(--gold-lt);">⏳ Ожидает</span>')
         : '';
-      const dirs = (b.directions&&b.directions.length)
-        ? b.directions.slice(0,4).map(d=>'<span class="tag" style="font-size:10px;padding:2px 8px;">'+d+'</span>').join('')
+      const dirs = (b.directions && b.directions.length)
+        ? b.directions.slice(0,4).map(d => '<span class="tag" style="font-size:10px;padding:2px 8px;">' + esc(d) + '</span>').join('')
         : '';
 
-      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(178,144,106,0.1);">' +
+      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(178,144,106,0.1);">' +
         '<div style="width:44px;height:44px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gold);flex-shrink:0;">' + initials + '</div>' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">' + escHtml(b.company) + '</div>' +
-          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">' + escHtml(b.name) +
-            (b.notes ? ' · <span style="color:var(--text-dim);">'+escHtml(b.notes)+'</span>' : '') +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">' + esc(b.company) + '</div>' +
+          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">' + esc(b.name) +
+            (b.notes ? ' · ' + esc(b.notes) : '') +
+            (b.city  ? ' · <span style="color:var(--text-dim);">📍' + esc(b.city) + '</span>' : '') +
           '</div>' +
-          (b.audience ? '<div style="font-size:11px;color:var(--gold-lt);margin-bottom:4px;">'+escHtml(b.audience)+'</div>' : '') +
-          (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:3px;">'+dirs+'</div>' : '') +
+          (b.audience ? '<div style="font-size:11px;color:var(--gold-lt);margin-bottom:4px;">' + esc(b.audience) + '</div>' : '') +
+          (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:3px;">' + dirs + '</div>' : '') +
         '</div>' +
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
           meetBadge +
-          '<button class="btn btn-outline btn-sm" onclick="showBuyerCard(&quot;'+b.id+'&quot;)" style="font-size:11px;">Подробнее</button>' +
-          (currentUser.role==='seller' && !existing
-            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(&quot;'+b.id+'&quot;)" style="font-size:11px;">Встреча</button>'
+          '<button class="btn btn-outline btn-sm" onclick="showBuyerCard(\'' + b.id + '\')" style="font-size:11px;">Подробнее</button>' +
+          (currentUser.role === 'seller' && !existing
+            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" style="font-size:11px;">Встреча</button>'
             : '') +
         '</div>' +
       '</div>';
     }).join('');
   } catch(err) {
-    console.error('renderBuyers error:', err);
+    console.error('renderBuyers:', err);
     const el = document.getElementById('buyersList');
-    if (el) el.innerHTML = '<div style="color:#f87171;padding:20px;">Ошибка: '+err.message+'</div>';
+    if (el) el.innerHTML = '<div style="color:#f87171;padding:20px;">Ошибка: ' + err.message + '</div>';
   }
 }
 
-/* ── SCHEDULE ── */
+// ════════════════════════════════════════════════
+// SCHEDULE
+// ════════════════════════════════════════════════
 function renderSchedule() {
   const el = document.getElementById('scheduleList');
+  if (!el) return;
   const confirmed = myMeetings.filter(m => m.status === 'confirmed');
-
-  if (!confirmed.length) {
-    el.innerHTML = '<div class="empty">Подтверждённых встреч пока нет</div>';
-    return;
-  }
-
+  if (!confirmed.length) { el.innerHTML = '<div class="empty">Подтверждённых встреч пока нет</div>'; return; }
   const sorted = confirmed.sort((a,b) => (a.slot?.sort_order||0) - (b.slot?.sort_order||0));
-
   el.innerHTML = sorted.map(m => {
     const other = currentUser.role === 'seller' ? m.buyer : m.seller;
     const otherId = other && other.id;
-    const clickFn = currentUser.role === 'seller'
-      ? 'showBuyerCard(\'' + otherId + '\')'
-      : 'showSellerCard(\'' + otherId + '\')';
+    const clickFn = currentUser.role === 'seller' ? 'showBuyerCard' : 'showSellerCard';
     return '<div class="schedule-item">' +
-      '<div class="schedule-time">' + (m.slot&&m.slot.time_label||'—') + '</div>' +
-      '<div class="schedule-info" style="cursor:pointer;" onclick="' + clickFn + '">' +
-        '<div class="schedule-name">' + (other&&other.company||'—') +
-          ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
-        '</div>' +
-        '<div class="schedule-company">' + (other&&other.name||'—') + '</div>' +
+      '<div class="schedule-time">' + (m.slot && m.slot.time_label || '—') + '</div>' +
+      '<div class="schedule-info" style="cursor:pointer;" onclick="' + clickFn + '(\'' + otherId + '\')">' +
+        '<div class="schedule-name">' + esc(other && other.company || '—') + '</div>' +
+        '<div class="schedule-company">' + esc(other && other.name || '—') + '</div>' +
       '</div>' +
-      '<span class="status-badge status-confirmed">✓ Подтверждено</span>' +
+      '<span class="status-badge status-confirmed">✓</span>' +
     '</div>';
   }).join('');
 }
 
-/* ── REQUESTS (buyer) ── */
+// ════════════════════════════════════════════════
+// REQUESTS (Buyer view)
+// ════════════════════════════════════════════════
 function renderRequests() {
   const el = document.getElementById('requestsList');
-  const pending = myMeetings.filter(m =>
-    (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) &&
-    m.status === 'pending'
-  );
-  const others = myMeetings.filter(m =>
-    (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) &&
-    m.status !== 'pending'
-  );
-
-  if (!pending.length && !others.length) {
-    el.innerHTML = '<div class="empty">Запросов пока нет — селлеры скоро свяжутся с вами</div>';
-    return;
-  }
-
-  const renderItem = function(m) {
-    const seller = m.seller;
-    const initials = (seller&&seller.name) ? seller.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() : '?';
-    const fullSeller = allSellers.find(function(s){ return s.id === (seller&&seller.id); }) || seller || {};
-    const avatarHtml = fullSeller.avatar_url
-      ? '<img src="'+fullSeller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
-      : initials;
+  if (!el) return;
+  const pending = myMeetings.filter(m => m.buyer_id === currentUser.id || (m.buyer && m.buyer.id === currentUser.id));
+  if (!pending.length) { el.innerHTML = '<div class="empty">Входящих запросов нет</div>'; return; }
+  const sorted = pending.sort((a,b) => (a.slot?.sort_order||0) - (b.slot?.sort_order||0));
+  el.innerHTML = sorted.map(m => {
+    const seller = m.seller || allSellers.find(s => s.id === m.seller_id) || {};
+    const slotLabel = m.slot && m.slot.time_label || '—';
     const statusMap = {
-      pending: '<span class="status-badge status-pending">Ожидает ответа</span>',
       confirmed: '<span class="status-badge status-confirmed">✓ Подтверждено</span>',
-      declined: '<span class="status-badge status-declined">Отклонено</span>',
+      declined:  '<span class="status-badge status-declined">✗ Отклонено</span>',
+      pending:   '<span class="status-badge status-pending">⏳ Ожидает</span>',
     };
     return '<div class="buyer-item">' +
-      '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller&&seller.id) + '\&quot;)">' +
-        '<div class="buyer-avatar" style="background:var(--navy);">' + avatarHtml + '</div>' +
+      '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller.id||'') + '\')">' +
+        '<div class="buyer-avatar">' + ini(seller.company || '?') + '</div>' +
         '<div>' +
-          '<div class="buyer-name">' + (seller&&seller.company||'—') +
-            ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '<div class="buyer-name">' + esc(seller.company || '—') +
+            ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
           '</div>' +
-          '<div class="buyer-company">' + (seller&&seller.name||'—') + ' · ' + (m.slot&&m.slot.time_label||'—') + '</div>' +
+          '<div class="buyer-company">' + esc(seller.name || '—') + ' · ' + slotLabel + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="buyer-right">' +
-        (statusMap[m.status]||'') +
-        (m.status === 'pending' ? '<button class="btn btn-gold btn-sm" onclick="openMeeting(\'' + m.id + '\&quot;)">Ответить</button>' : '') +
+        (statusMap[m.status] || '') +
+        (m.status === 'pending'
+          ? '<button class="btn btn-gold btn-sm" onclick="openRespondModal(\'' + m.id + '\')">Ответить</button>'
+          : '') +
       '</div>' +
     '</div>';
-  };
-
-  el.innerHTML = (pending.length ? '<div style="margin-bottom:8px;font-size:12px;color:var(--warn);">● Ожидают ответа</div>' : '') +
-    pending.map(renderItem).join('') +
-    (others.length ? '<div class="divider"></div>' : '') +
-    others.map(renderItem).join('');
+  }).join('');
 }
 
-/* ── NOTIFICATIONS ── */
+// ════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════
 async function renderNotifications() {
   const el = document.getElementById('notifList');
+  if (!el) return;
+  await loadNotifs();
   if (!myNotifs.length) { el.innerHTML = '<div class="empty">Уведомлений нет</div>'; return; }
-
-  el.innerHTML = myNotifs.map(n => `
-    <div class="notif-item">
-      <div class="notif-dot ${n.is_read ? 'read' : ''}"></div>
-      <div>
-        <div class="notif-text">${n.message}</div>
-        <div class="notif-time">${formatTime(n.sent_at)}</div>
-      </div>
-    </div>`).join('');
-
-  // mark all as read
-  const unreadIds = myNotifs.filter(n => !n.is_read).map(n => n.id);
-  if (unreadIds.length) {
-    await sb.from('notifications').update({ is_read: true }).in('id', unreadIds);
-    myNotifs.forEach(n => { if (unreadIds.includes(n.id)) n.is_read = true; });
+  el.innerHTML = myNotifs.map(n =>
+    '<div class="notif-item' + (n.is_read ? '' : ' notif-unread') + '" onclick="markRead(\'' + n.id + '\')">' +
+      '<div class="notif-msg">' + esc(n.message) + '</div>' +
+      '<div class="notif-time">' + formatTime(n.sent_at) + '</div>' +
+    '</div>'
+  ).join('');
+  // Mark all as read
+  const unread = myNotifs.filter(n => !n.is_read).map(n => n.id);
+  if (unread.length) {
+    await sb.from('notifications').update({ is_read: true }).in('id', unread);
+    myNotifs.forEach(n => n.is_read = true);
     updateNotifBadge();
   }
 }
 
-/* renderProfile — moved to profile section below */
+async function markRead(id) {
+  await sb.from('notifications').update({ is_read: true }).eq('id', id);
+}
 
+// ════════════════════════════════════════════════
+// PROFILE
+// ════════════════════════════════════════════════
 function renderProfile() {
   const el = document.getElementById('profileContent');
   if (!el) return;
   const u = currentUser;
   const isSeller = u.role === 'seller';
   const isBuyer  = u.role === 'buyer';
-  const initials = u.company.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  const compIni  = ini(u.company);
 
   el.innerHTML =
-    '<div style="max-width:600px;">' +
-      // Company header card
-      '<div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:20px;">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);flex-shrink:0;">' + initials + '</div>' +
+    '<div style="max-width:620px;">' +
+
+    // Header card
+    '<div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:20px;">' +
+      '<div style="width:52px;height:52px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:var(--gold);flex-shrink:0;">' + compIni + '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:18px;font-weight:700;">' + esc(u.company) + '</div>' +
+        '<div style="font-size:13px;color:var(--text-dim);margin-top:1px;">' + esc(u.name) + (u.notes ? ' · ' + esc(u.notes) : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--gold-lt);margin-top:2px;">Логин: ' + esc(u.login) + '</div>' +
+      '</div>' +
+      (u.logo_url ? '<img src="' + u.logo_url + '" style="height:36px;width:auto;object-fit:contain;max-width:110px;">' : '') +
+    '</div>' +
+
+    // Edit card
+    '<div class="card" style="padding:20px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">' +
+        '<div class="card-title" style="margin:0;">Мои данные</div>' +
+        '<button class="btn btn-outline btn-sm" style="font-size:11px;" ' +
+          'onclick="openAddPersonModal(this)" data-company="' + esc(u.company) + '" data-role="' + u.role + '">' +
+          '+ Добавить представителя' +
+        '</button>' +
+      '</div>' +
+
+      // Logo upload
+      '<div style="margin-bottom:16px;padding:14px;background:rgba(26,29,74,0.5);border-radius:10px;display:flex;align-items:center;gap:14px;">' +
+        '<div id="logoPreview" style="width:80px;height:52px;border-radius:8px;background:var(--navy-b);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid rgba(178,144,106,0.2);">' +
+          (u.logo_url
+            ? '<img src="' + u.logo_url + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
+            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
+        '</div>' +
         '<div style="flex:1;">' +
-          '<div style="font-size:18px;font-weight:700;margin-bottom:2px;">' + escHtml(u.company) + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);">' + escHtml(u.name) +
-            (u.notes ? ' · <span style="color:var(--text-dim);">'+escHtml(u.notes)+'</span>' : '') +
-          '</div>' +
-          '<div style="font-size:11px;color:var(--gold-lt);margin-top:3px;">Логин: ' + escHtml(u.login) + '</div>' +
-        '</div>' +
-        (u.logo_url ? '<img src="'+u.logo_url+'" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '') +
-      '</div>' +
-
-      '<div class="card" style="padding:20px;">' +
-        '<div class="card-title" style="margin-bottom:14px;">Редактировать профиль</div>' +
-
-        // Logo upload
-        '<div style="margin-bottom:16px;padding:14px;background:rgba(26,29,74,0.5);border-radius:10px;display:flex;align-items:center;gap:14px;">' +
-          '<div id="logoPreview" style="width:72px;height:48px;border-radius:8px;background:var(--navy-b);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid rgba(178,144,106,0.2);">' +
-            (u.logo_url
-              ? '<img src="'+u.logo_url+'" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
-              : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
-          '</div>' +
-          '<div style="flex:1;">' +
-            '<div style="font-size:13px;font-weight:500;margin-bottom:3px;">Логотип компании</div>' +
-            '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">PNG, JPG или SVG · прозрачный фон · до 1 МБ · рекомендуется 300×100 px</div>' +
-            '<label class="btn btn-outline btn-sm" style="cursor:pointer;font-size:11px;">Загрузить' +
-              '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="uploadAvatar(this,&quot;logo&quot;)">' +
-            '</label>' +
-            (u.logo_url ? ' <button class="btn btn-sm" style="font-size:11px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);" onclick="removeLogo()">Удалить</button>' : '') +
-          '</div>' +
-        '</div>' +
-
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
-          '<div class="form-group" style="margin:0;"><label class="form-label">Имя</label>' +
-            '<input id="pName" class="form-input" value="' + escHtml(u.name) + '"></div>' +
-          '<div class="form-group" style="margin:0;"><label class="form-label">Должность</label>' +
-            '<input id="pNotes" class="form-input" value="' + escHtml(u.notes||'') + '" placeholder="Менеджер, директор..."></div>' +
-        '</div>' +
-
-        (isSeller ?
-          '<div class="form-group"><label class="form-label">Направления (через запятую)</label>' +
-            '<input id="pDirections" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '" placeholder="Таиланд, Вьетнам, Бали"></div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-            '<div class="form-group" style="margin:0;"><label class="form-label">Целевая аудитория</label>' +
-              '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семейный отдых..."></div>' +
-            '<div class="form-group" style="margin:0;"><label class="form-label">Ключевые услуги</label>' +
-              '<input id="pServices" class="form-input" value="' + escHtml(u.services||'') + '" placeholder="Туры, отели..."></div>' +
-          '</div>' +
-          '<div class="form-group"><label class="form-label">УТП</label>' +
-            '<textarea id="pUtp" class="form-input" rows="3" placeholder="Что вас отличает?">' + escHtml(u.utp||'') + '</textarea></div>'
-        : '') +
-
-        (isBuyer ?
-          '<div class="form-group"><label class="form-label">Целевая аудитория</label>' +
-            '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Корпоративные клиенты, семьи..."></div>' +
-          '<div class="form-group"><label class="form-label">Что ищете / интересы</label>' +
-            '<textarea id="pServices" class="form-input" rows="3" placeholder="Туры в Азию, премиум сегмент...">' + escHtml(u.services||'') + '</textarea></div>'
-        : '') +
-
-        '<div style="margin-top:8px;">' +
-          '<button class="btn btn-gold" onclick="saveProfile()" style="padding:10px 28px;">Сохранить профиль</button>' +
+          '<div style="font-size:13px;font-weight:500;margin-bottom:2px;">Логотип компании</div>' +
+          '<div style="font-size:11px;color:var(--text-dim);margin-bottom:7px;">PNG, JPG или SVG · прозрачный фон предпочтительнее · до 1 МБ · рекомендуется 300×100 px</div>' +
+          '<label class="btn btn-outline btn-sm" style="cursor:pointer;font-size:11px;">Загрузить' +
+            '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="uploadLogo(this)">' +
+          '</label>' +
+          (u.logo_url ? ' <button class="btn btn-sm" style="font-size:11px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);" onclick="removeLogo()">Удалить</button>' : '') +
         '</div>' +
       '</div>' +
-    '</div>';
+
+      // Personal fields
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Имя</label>' +
+          '<input id="pName" class="form-input" value="' + esc(u.name) + '"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Должность</label>' +
+          '<input id="pNotes" class="form-input" value="' + esc(u.notes||'') + '" placeholder="Менеджер, директор..."></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Телефон / WhatsApp</label>' +
+          '<input id="pPhone" class="form-input" value="' + esc(u.phone||'') + '" placeholder="+7 999 123-45-67"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Email</label>' +
+          '<input id="pEmail" class="form-input" value="' + esc(u.email||'') + '" placeholder="name@company.ru"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Telegram</label>' +
+          '<input id="pTg" class="form-input" value="' + esc(u.telegram_id||'') + '" placeholder="@username"></div>' +
+        '<div class="form-group" style="margin:0;"><label class="form-label">Город / регион</label>' +
+          '<input id="pCity" class="form-input" value="' + esc(u.city||'') + '" placeholder="Москва, Казань..."></div>' +
+      '</div>' +
+
+      (isSeller ?
+        '<div class="divider"></div>' +
+        '<div class="form-group"><label class="form-label">Направления (через запятую)</label>' +
+          '<input id="pDirections" class="form-input" value="' + esc((u.directions||[]).join(', ')) + '" placeholder="Таиланд, Вьетнам, Бали"></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Целевая аудитория</label>' +
+            '<input id="pAudience" class="form-input" value="' + esc(u.audience||'') + '" placeholder="Семьи, премиум..."></div>' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Ключевые услуги</label>' +
+            '<input id="pServices" class="form-input" value="' + esc(u.services||'') + '" placeholder="Туры, отели..."></div>' +
+        '</div>' +
+        '<div class="form-group"><label class="form-label">УТП</label>' +
+          '<textarea id="pUtp" class="form-input" rows="2" placeholder="Прямые контракты, собственные гиды...">' + esc(u.utp||'') + '</textarea></div>' +
+        '<div class="form-group"><label class="form-label">Условия работы / заметки для партнёров</label>' +
+          '<textarea id="pUtp2" class="form-input" rows="2" placeholder="Минимальный объём, предоплата...">' + esc(u.profile_raw||'') + '</textarea></div>'
+      : '') +
+
+      (isBuyer ?
+        '<div class="divider"></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Аудитория клиентов</label>' +
+            '<input id="pAudience" class="form-input" value="' + esc(u.audience||'') + '" placeholder="Семьи, корпоративные..."></div>' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Средний чек</label>' +
+            '<input id="pServices" class="form-input" value="' + esc(u.services||'') + '" placeholder="Средний, премиум..."></div>' +
+        '</div>' +
+        '<div class="form-group"><label class="form-label">Интересующие направления</label>' +
+          '<input id="pDirections" class="form-input" value="' + esc((u.directions||[]).join(', ')) + '" placeholder="Азия, ОАЭ, Европа..."></div>' +
+        '<div class="form-group"><label class="form-label">Ожидания от встреч</label>' +
+          '<textarea id="pUtp" class="form-input" rows="2" placeholder="Ищем надёжных партнёров по Азии...">' + esc(u.utp||'') + '</textarea></div>'
+      : '') +
+
+      '<div style="margin-top:8px;">' +
+        '<button class="btn btn-gold" onclick="saveProfile()" style="padding:10px 28px;">Сохранить профиль</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 }
 
 async function saveProfile() {
+  const get = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  const dir = get('pDirections');
   const updates = {
-    name:    document.getElementById('pName').value.trim(),
-    company: document.getElementById('pCompany').value.trim(),
+    name:        get('pName'),
+    notes:       get('pNotes'),
+    phone:       get('pPhone'),
+    email:       get('pEmail'),
+    telegram_id: get('pTg'),
+    city:        get('pCity'),
+    directions:  dir ? dir.split(',').map(s => s.trim()).filter(Boolean) : [],
+    audience:    get('pAudience'),
+    services:    get('pServices'),
+    utp:         get('pUtp'),
+    profile_raw: get('pUtp2'),
   };
-  if (currentUser.role !== 'buyer') {
-    const dir = document.getElementById('pDirections').value;
-    updates.directions = dir ? dir.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    updates.audience = document.getElementById('pAudience').value.trim();
-    updates.services = document.getElementById('pServices').value.trim();
-    updates.utp      = document.getElementById('pUtp').value.trim();
-    updates.notes    = document.getElementById('pNotes').value.trim();
+  if (currentUser.role === 'seller') {
     updates.profile_ready = !!(updates.directions.length && updates.audience && updates.utp);
   }
   const { error } = await sb.from('users').update(updates).eq('id', currentUser.id);
   if (error) { toast('Ошибка сохранения: ' + error.message); return; }
   Object.assign(currentUser, updates);
   document.getElementById('userName').textContent = currentUser.name;
-  setTimeout(updateHeaderAvatar, 100);
+  renderProfile();
   toast('Профиль сохранён ✓');
 }
 
-async function uploadAvatar(input, type) {
+async function uploadLogo(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 1 * 1024 * 1024) { toast('Файл слишком большой — максимум 1 МБ. Сожми изображение и попробуй снова.'); return; }
-
+  if (file.size > 1024 * 1024) { toast('Файл слишком большой — максимум 1 МБ'); return; }
   const reader = new FileReader();
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
-    const field = type === 'avatar' ? 'avatar_url' : 'logo_url';
-    const updateData = { [field]: dataUrl };
-    const { error } = await sb.from('users').update(updateData).eq('id', currentUser.id);
+    const { error } = await sb.from('users').update({ logo_url: dataUrl }).eq('id', currentUser.id);
     if (error) { toast('Ошибка загрузки: ' + error.message); return; }
-    currentUser[field] = dataUrl;
-
-    // Update logo preview in profile
-    const previewEl = document.getElementById('logoPreview');
-    if (previewEl && type === 'logo') {
-      previewEl.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">';
-    }
-    updateHeaderAvatar();
-    toast(type === 'logo' ? 'Логотип загружен ✓' : 'Фото загружено ✓');
+    currentUser.logo_url = dataUrl;
+    const prev = document.getElementById('logoPreview');
+    if (prev) prev.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">';
+    toast('Логотип загружен ✓');
   };
   reader.readAsDataURL(file);
 }
 
 async function removeLogo() {
-  if (!confirm('Удалить логотип компании?')) return;
+  if (!confirm('Удалить логотип?')) return;
   const { error } = await sb.from('users').update({ logo_url: null }).eq('id', currentUser.id);
   if (error) { toast('Ошибка: ' + error.message); return; }
   currentUser.logo_url = null;
-  toast('Логотип удалён');
   renderProfile();
+  toast('Логотип удалён');
 }
 
 function updateHeaderAvatar() {
-  // Show avatar in header user pill if available
-  const pill = document.getElementById('userName');
-  if (currentUser.avatar_url && pill) {
-    const existingImg = pill.previousSibling;
-    if (existingImg && existingImg.tagName === 'IMG') existingImg.remove();
-    const img = document.createElement('img');
-    img.src = currentUser.avatar_url;
-    img.style.cssText = 'width:24px;height:24px;border-radius:50%;object-fit:cover;margin-right:4px;';
-    pill.parentNode.insertBefore(img, pill);
-  }
+  // no-op: avatars removed, keeping for compatibility
 }
 
+// ════════════════════════════════════════════════
+// BUYER CARD (Seller views buyer)
+// ════════════════════════════════════════════════
+async function showBuyerCard(buyerId) {
+  const buyer = allBuyers.find(b => b.id === buyerId);
+  if (!buyer) return;
+  const { data: people } = await sb.from('users')
+    .select('id,name,notes,telegram_id,phone,email,city')
+    .eq('company', buyer.company).eq('event_id', EVENT_ID).eq('role','buyer').order('name');
+  const logoHtml = buyer.logo_url
+    ? '<img src="' + buyer.logo_url + '" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '';
+  const dirs = (buyer.directions && buyer.directions.length)
+    ? buyer.directions.map(d => '<span class="tag" style="font-size:11px;padding:2px 10px;">' + esc(d) + '</span>').join('') : '';
+  const contactsHtml = (people||[]).map(p => {
+    const contacts = [
+      p.city        ? '📍 ' + esc(p.city) : '',
+      p.phone       ? '📞 ' + esc(p.phone) : '',
+      p.telegram_id ? '✈ '  + esc(p.telegram_id) : '',
+      p.email       ? '✉ '  + esc(p.email) : '',
+    ].filter(Boolean).join('  ·  ');
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid rgba(178,144,106,0.08);">' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;">' + ini(p.name) + '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:600;">' + esc(p.name) + '</div>' +
+        (p.notes ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:2px;">' + esc(p.notes) + '</div>' : '') +
+        (contacts ? '<div style="font-size:11px;color:var(--gold-lt);line-height:1.9;">' + contacts + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
 
+  const existing = myMeetings.find(mt =>
+    (mt.seller_id === currentUser.id || (mt.seller && mt.seller.id === currentUser.id)) &&
+    (mt.buyer_id  === buyer.id        || (mt.buyer  && mt.buyer.id  === buyer.id)));
 
-// ══════════════════════════════════════════════
-// ADMIN: PARTICIPANTS v2
-// filter + edit + multi-user per company + show password
-// ══════════════════════════════════════════════
+  const div = document.createElement('div');
+  div.className = 'modal-overlay'; div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:480px;max-height:88vh;overflow-y:auto;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;">' +
+        '<div>' +
+          '<div style="font-size:20px;font-weight:700;margin-bottom:3px;">' + esc(buyer.company) + '</div>' +
+          (buyer.city ? '<div style="font-size:12px;color:var(--text-dim);">📍 ' + esc(buyer.city) + '</div>' : '') +
+        '</div>' +
+        logoHtml +
+      '</div>' +
+      (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">' + dirs + '</div>' : '') +
+      '<div class="profile-block">' +
+        (buyer.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">' + esc(buyer.audience) + '</span></div>' : '') +
+        (buyer.services ? '<div class="profile-row"><span class="profile-key">Средний чек</span><span class="profile-val">' + esc(buyer.services) + '</span></div>' : '') +
+        (buyer.utp      ? '<div class="profile-row"><span class="profile-key">Ожидания</span><span class="profile-val">' + esc(buyer.utp) + '</span></div>' : '') +
+        (!buyer.audience && !buyer.services && !buyer.utp
+          ? '<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:13px;">Профиль ещё не заполнен</div>' : '') +
+      '</div>' +
+      '<div style="margin-top:14px;">' +
+        '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Представители</div>' +
+        (contactsHtml || '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Нет данных</div>') +
+      '</div>' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
+        (currentUser.role === 'seller' && !existing
+          ? '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove();openPropose(\'' + buyerId + '\')">Предложить встречу</button>'
+          : (existing ? '<span style="font-size:12px;color:' + (existing.status==='confirmed' ? '#4ade80':'var(--gold-lt)') + ';">' + (existing.status==='confirmed' ? '✓ Встреча подтверждена':'⏳ Запрос отправлен') + '</span>' : '')) +
+      '</div>' +
+    '</div>';
+  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
+}
 
-let participantFilter = 'all'; // 'all' | 'seller' | 'buyer'
+// ════════════════════════════════════════════════
+// SELLER CARD (Buyer views seller)
+// ════════════════════════════════════════════════
+async function showSellerCard(sellerId) {
+  const seller = allSellers.find(s => s.id === sellerId);
+  if (!seller) { toast('Информация о продавце не найдена'); return; }
+  const { data: people } = await sb.from('users')
+    .select('id,name,notes,telegram_id,phone,email,city')
+    .eq('company', seller.company).eq('event_id', EVENT_ID).eq('role','seller').order('name');
+  const logoHtml = seller.logo_url
+    ? '<img src="' + seller.logo_url + '" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '';
+  const dirs = (seller.directions && seller.directions.length)
+    ? seller.directions.map(d => '<span class="tag" style="font-size:11px;padding:2px 10px;">' + esc(d) + '</span>').join('') : '';
+  const contactsHtml = (people||[]).map(p => {
+    const contacts = [
+      p.city        ? '📍 ' + esc(p.city) : '',
+      p.phone       ? '📞 ' + esc(p.phone) : '',
+      p.telegram_id ? '✈ '  + esc(p.telegram_id) : '',
+      p.email       ? '✉ '  + esc(p.email) : '',
+    ].filter(Boolean).join('  ·  ');
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid rgba(178,144,106,0.08);">' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;">' + ini(p.name) + '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:600;">' + esc(p.name) + '</div>' +
+        (p.notes ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:2px;">' + esc(p.notes) + '</div>' : '') +
+        (contacts ? '<div style="font-size:11px;color:var(--gold-lt);line-height:1.9;">' + contacts + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const div = document.createElement('div');
+  div.className = 'modal-overlay'; div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:480px;max-height:88vh;overflow-y:auto;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;">' +
+        '<div>' +
+          '<div style="font-size:20px;font-weight:700;margin-bottom:3px;">' + esc(seller.company) + '</div>' +
+          (seller.city ? '<div style="font-size:12px;color:var(--text-dim);">📍 ' + esc(seller.city) + '</div>' : '') +
+        '</div>' +
+        logoHtml +
+      '</div>' +
+      (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">' + dirs + '</div>' : '') +
+      '<div class="profile-block">' +
+        (seller.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">' + esc(seller.audience) + '</span></div>' : '') +
+        (seller.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">' + esc(seller.services) + '</span></div>' : '') +
+        (seller.utp      ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">' + esc(seller.utp) + '</span></div>' : '') +
+        (seller.notes    ? '<div class="profile-row"><span class="profile-key">Условия</span><span class="profile-val">' + esc(seller.notes) + '</span></div>' : '') +
+        (!seller.audience && !seller.services && !seller.utp
+          ? '<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:13px;">Профиль ещё не заполнен</div>' : '') +
+      '</div>' +
+      '<div style="margin-top:14px;">' +
+        '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Представители</div>' +
+        (contactsHtml || '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Нет данных</div>') +
+      '</div>' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
+      '</div>' +
+    '</div>';
+  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
+}
+
+// ════════════════════════════════════════════════
+// ADMIN
+// ════════════════════════════════════════════════
+async function renderAdmin() {
+  const all = await loadAllMeetings();
+  const total     = all.length;
+  const confirmed = all.filter(m => m.status === 'confirmed').length;
+  const pending   = all.filter(m => m.status === 'pending').length;
+
+  document.getElementById('adminStats').innerHTML =
+    '<div class="stat-card"><div class="stat-num">' + total + '</div><div class="stat-label">Всего встреч</div></div>' +
+    '<div class="stat-card"><div class="stat-num">' + confirmed + '</div><div class="stat-label">Подтверждено</div></div>' +
+    '<div class="stat-card"><div class="stat-num" style="color:var(--warn);">' + pending + '</div><div class="stat-label">Ожидают</div></div>';
+
+  renderAdminParticipants();
+  renderAdminMatrix(all);
+}
+
+function setFilter(f) { participantFilter = f; renderAdminParticipants(); }
 
 async function renderAdminParticipants() {
-  var el = document.getElementById('adminParticipants');
+  const el = document.getElementById('adminParticipants');
   if (!el) return;
-
-  var { data: allUsers } = await sb.from('users')
-    .select('*').eq('event_id', EVENT_ID)
-    .neq('role','admin').order('company').order('name');
-
+  const { data: allUsers } = await sb.from('users')
+    .select('*').eq('event_id', EVENT_ID).neq('role','admin').order('company').order('name');
   if (!allUsers || !allUsers.length) { el.innerHTML = '<div class="empty">Нет участников</div>'; return; }
 
-  var filtered = participantFilter === 'all' ? allUsers : allUsers.filter(function(u){ return u.role === participantFilter; });
+  const filtered = participantFilter === 'all' ? allUsers : allUsers.filter(u => u.role === participantFilter);
 
-  // Filter bar
-  var filterBar =
+  const filterBar =
     '<div style="display:flex;gap:6px;margin-bottom:14px;">' +
-      '<button class="btn btn-sm ' + (participantFilter==='all' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(&quot;all&quot;)">Все (' + allUsers.length + ')</button>' +
-      '<button class="btn btn-sm ' + (participantFilter==='seller' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(&quot;seller&quot;)">Селлеры (' + allUsers.filter(function(u){return u.role==='seller';}).length + ')</button>' +
-      '<button class="btn btn-sm ' + (participantFilter==='buyer' ? 'btn-gold' : 'btn-outline') + '" onclick="setFilter(&quot;buyer&quot;)">Байеры (' + allUsers.filter(function(u){return u.role==='buyer';}).length + ')</button>' +
+      '<button class="btn btn-sm ' + (participantFilter==='all'?'btn-gold':'btn-outline') + '" onclick="setFilter(\'all\')">Все (' + allUsers.length + ')</button>' +
+      '<button class="btn btn-sm ' + (participantFilter==='seller'?'btn-gold':'btn-outline') + '" onclick="setFilter(\'seller\')">Селлеры (' + allUsers.filter(u=>u.role==='seller').length + ')</button>' +
+      '<button class="btn btn-sm ' + (participantFilter==='buyer'?'btn-gold':'btn-outline') + '" onclick="setFilter(\'buyer\')">Байеры (' + allUsers.filter(u=>u.role==='buyer').length + ')</button>' +
     '</div>';
 
   // Group by company
-  var companies = {};
-  filtered.forEach(function(u) {
+  const companies = {};
+  filtered.forEach(u => {
     if (!companies[u.company]) companies[u.company] = { role: u.role, users: [] };
     companies[u.company].users.push(u);
   });
 
-  var rows = Object.keys(companies).map(function(company) {
-    var group = companies[company];
-    var users = group.users;
-    var roleCls = group.role === 'seller' ? 'role-seller' : 'role-buyer';
-    var roleLabel = group.role === 'seller' ? 'SELLER' : 'БАЙЕР';
-    var firstUser = users[0];
-    var logoHtml = firstUser.logo_url
-      ? '<img src="' + firstUser.logo_url + '" style="height:28px;width:auto;object-fit:contain;max-width:80px;">'
-      : '';
+  const rows = Object.keys(companies).map(company => {
+    const group = companies[company];
+    const users = group.users;
+    const first = users[0];
+    const roleCls   = group.role === 'seller' ? 'role-seller' : 'role-buyer';
+    const roleLabel = group.role === 'seller' ? 'SELLER' : 'БАЙЕР';
+    const logoHtml  = first.logo_url
+      ? '<img src="' + first.logo_url + '" style="height:28px;width:auto;object-fit:contain;max-width:80px;">' : '';
+    const sharedLogin = first.login;
+    const sharedPass  = first.password_hash;
+    const needsSync   = users.some(u => u.login !== sharedLogin || u.password_hash !== sharedPass);
 
-    var sharedLogin = firstUser.login;
-    var sharedPass  = firstUser.password_hash;
-    var needsSync = users.some(function(u){ return u.login !== sharedLogin || u.password_hash !== sharedPass; });
+    const logoBtn = buildBtn('logo-company', '', '', first.id);
 
-    var peopleRows = users.map(function(u) {
-      var initials = u.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-      return [
-        '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(178,144,106,0.1);">',
-          '<div style="width:32px;height:32px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);flex-shrink:0;font-weight:600;">' + initials + '</div>',
-          '<div style="flex:1;min-width:0;">',
-            '<div style="font-size:13px;font-weight:500;">' + u.name + '</div>',
-          '</div>',
-          '<div style="display:flex;gap:4px;">',
-            buildBtn('pdf', sharedLogin, sharedPass, u.id),
-            buildBtn('edit', sharedLogin, sharedPass, u.id),
-            buildBtn('del', u.name, sharedPass, u.id),
-          '</div>',
-        '</div>'
-      ].join('');
+    const peopleRows = users.map(u => {
+      const companyEsc = company.replace(/"/g, '');
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(178,144,106,0.1);">' +
+        '<div style="width:32px;height:32px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;">' + ini(u.name) + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:13px;font-weight:500;">' + esc(u.name) + (u.notes ? '<span style="font-size:11px;color:var(--text-dim);margin-left:6px;">' + esc(u.notes) + '</span>' : '') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:4px;">' +
+          buildBtn('copy', sharedLogin, sharedPass, u.id) +
+          buildBtn('pdf', sharedLogin, sharedPass, u.id) +
+          buildBtn('edit', sharedLogin, sharedPass, u.id) +
+          buildBtn('del', u.name, sharedPass, u.id) +
+        '</div>' +
+      '</div>';
     }).join('');
 
-    return [
-      '<div class="card" style="margin-bottom:12px;padding:16px;">',
-        // Company header row
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">',
-          '<div style="flex:1;">',
-            '<div style="font-size:15px;font-weight:600;">' + company +
-              ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
-              ' <span style="font-size:11px;color:var(--text-dim);">' + users.length + ' чел.</span>' +
-            '</div>',
-          '</div>',
-          logoHtml,
-          buildBtn('logo-company', '', '', firstUser.id),
-          '<button class="btn btn-gold btn-sm" onclick="openAddPersonModal(this)" data-company="' + company.replace(/"/g, '') + '" data-role="' + group.role + '" style="font-size:11px;white-space:nowrap;">+ Добавить</button>',
-        '</div>',
-        // Shared login block
-        '<div style="display:flex;align-items:center;gap:16px;padding:8px 12px;background:rgba(26,29,74,0.6);border-radius:8px;margin-bottom:4px;flex-wrap:wrap;">',
-          '<span style="font-size:11px;color:var(--text-dim);">Логин компании:</span>',
-          '<b style="font-family:monospace;color:var(--gold);font-size:12px;">' + sharedLogin + '</b>',
-          '<span style="font-size:11px;color:var(--text-dim);">Пароль:</span>',
-          '<span data-pass="' + sharedPass + '" style="font-family:monospace;color:var(--gold-lt);font-size:12px;cursor:pointer;" onclick="togglePwd(this)">••••••••</span>',
-          '<button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px;" onclick="quickCopy(this)" data-login="' + sharedLogin + '" data-pass="' + sharedPass + '" title="Скопировать">копировать</button>',
-          (needsSync ? '<button class="btn btn-sm" style="background:#f87171;color:#fff;font-size:10px;padding:2px 8px;" onclick="syncCompanyLogins(this)" data-company="' + company.replace(/"/g,'') + '" data-login="' + sharedLogin + '" data-pass="' + sharedPass + '" title="Разные логины — синхронизировать">⚠ синхронизировать логины</button>' : ''),
-        '</div>',
-        peopleRows,
-      '</div>'
-    ].join('');
+    return '<div class="card" style="margin-bottom:12px;padding:16px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:15px;font-weight:600;">' + esc(company) +
+            ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
+            ' <span style="font-size:11px;color:var(--text-dim);">' + users.length + ' чел.</span>' +
+          '</div>' +
+        '</div>' +
+        logoHtml +
+        logoBtn +
+        '<button class="btn btn-gold btn-sm" onclick="openAddPersonModal(this)" data-company="' + company.replace(/"/g,'') + '" data-role="' + group.role + '" style="font-size:11px;white-space:nowrap;">+ Добавить</button>' +
+      '</div>' +
+      '<div style="padding:8px 12px;background:rgba(26,29,74,0.6);border-radius:8px;margin-bottom:4px;font-size:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+        '<span style="color:var(--text-dim);">Логин:</span>' +
+        '<b style="font-family:monospace;color:var(--gold);">' + esc(sharedLogin) + '</b>' +
+        '<span style="color:var(--text-dim);">Пароль:</span>' +
+        '<span data-pass="' + esc(sharedPass) + '" onclick="togglePwd(this)" style="font-family:monospace;color:var(--gold-lt);cursor:pointer;">••••••••</span>' +
+        '<button class="btn btn-outline btn-sm" onclick="quickCopy(this)" data-login="' + esc(sharedLogin) + '" data-pass="' + esc(sharedPass) + '" style="font-size:10px;padding:2px 8px;margin-left:auto;">копировать</button>' +
+        (needsSync ? '<button class="btn btn-sm" style="background:#f87171;color:#fff;font-size:10px;padding:2px 8px;" onclick="syncCompanyLogins(this)" data-company="' + company.replace(/"/g,'') + '" data-login="' + esc(sharedLogin) + '" data-pass="' + esc(sharedPass) + '">⚠ синхронизировать</button>' : '') +
+      '</div>' +
+      peopleRows +
+    '</div>';
   }).join('');
 
   el.innerHTML = filterBar + rows;
 }
 
+function renderAdminMatrix(all) {
+  const el = document.getElementById('adminMatrix');
+  if (!el) return;
+  if (!allSellers.length || !allBuyers.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  let html = '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:11px;">' +
+    '<tr><th style="padding:6px 10px;background:var(--navy-d);color:var(--gold-lt);text-align:left;position:sticky;left:0;z-index:1;min-width:130px;">Селлер</th>';
+  allBuyers.forEach(b => {
+    html += '<th style="padding:6px 8px;background:var(--navy-d);color:var(--gold-lt);text-align:center;min-width:80px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(b.company) + '">' + esc(b.company.slice(0,12)) + '</th>';
+  });
+  html += '</tr>';
+  allSellers.forEach(s => {
+    html += '<tr><td style="padding:6px 10px;background:var(--navy-b);font-weight:500;position:sticky;left:0;">' + esc(s.company) + '<br><span style="font-weight:400;color:var(--text-dim);">' + esc(s.name) + '</span></td>';
+    allBuyers.forEach(b => {
+      const m = all.find(mt => (mt.seller_id===s.id||mt.seller?.id===s.id) && (mt.buyer_id===b.id||mt.buyer?.id===b.id));
+      const cell = m
+        ? (m.status==='confirmed' ? '<span style="color:#4ade80;">✓</span>' : '<span style="color:var(--gold-lt);">⏳</span>')
+        : '—';
+      html += '<td style="padding:6px 8px;text-align:center;border:1px solid rgba(178,144,106,0.05);">' + cell + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  el.innerHTML = html;
+}
 
-function setFilter(f) {
-  participantFilter = f;
+async function syncCompanyLogins(btn) {
+  const company = btn.dataset.company;
+  const login   = btn.dataset.login;
+  const pass    = btn.dataset.pass;
+  if (!confirm('Синхронизировать всех участников "' + company + '" на логин: ' + login + '?')) return;
+  const { error } = await sb.from('users').update({ login, password_hash: pass })
+    .eq('company', company).eq('event_id', EVENT_ID).neq('role','admin');
+  if (error) { toast('Ошибка: ' + error.message); return; }
+  toast('Синхронизировано ✓');
+  await loadUsers();
   renderAdminParticipants();
 }
 
-// Show/hide password inline
-function togglePwdView(userId, pwd) {
-  const el = document.getElementById('pwd_' + userId);
-  if (!el) return;
-  if (el.dataset.showing === '1') {
-    el.textContent = '••••••••';
-    el.dataset.showing = '0';
-    el.style.color = 'var(--text-dim)';
-  } else {
-    el.textContent = pwd;
-    el.dataset.showing = '1';
-    el.style.color = 'var(--gold-lt)';
-  }
-}
+// ── Admin: Add person modal ──
+async function openAddPersonModal(btn) {
+  const company = btn.dataset.company;
+  const role    = btn.dataset.role;
 
-// ── EDIT PARTICIPANT MODAL ──
-let _editUserId = null;
+  // Get shared credentials from existing company members
+  const { data: existing } = await sb.from('users')
+    .select('login,password_hash').eq('company', company).eq('event_id', EVENT_ID).neq('role','admin').limit(1);
+  const isNew = !existing || !existing.length;
+  const sharedLogin = isNew ? generateLogin(company) : existing[0].login;
+  const sharedPass  = isNew ? generatePassword()     : existing[0].password_hash;
 
-async function openEditParticipant(userId) {
-  const { data: u } = await sb.from('users').select('*').eq('id', userId).single();
-  if (!u) return;
-  _editUserId = userId;
-
-  // Load all people from the same company
-  const { data: companyPeople } = await sb.from('users')
-    .select('id,name,notes').eq('company', u.company).eq('event_id', EVENT_ID)
-    .neq('role','admin').order('name');
-
-  const isSeller = u.role === 'seller';
-
-  // Build rows for each person in this company
-  const peopleRows = (companyPeople || []).map(function(p) {
-    var isMe = p.id === userId;
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(178,144,106,0.07);">' +
-      '<div style="width:28px;height:28px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);flex-shrink:0;">' +
-        p.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() +
-      '</div>' +
-      '<div style="flex:1;font-size:13px;">' + p.name + (isMe ? ' <span style="font-size:10px;color:var(--gold-lt);">(редактируется)</span>' : '') + '</div>' +
-      (!isMe ? '<button class="btn btn-outline btn-sm" style="font-size:10px;" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove();openEditParticipant(&quot;' + p.id + '&quot;)">Изменить</button>' : '') +
-    '</div>';
-  }).join('');
+  const roleCls = role === 'seller' ? 'role-seller' : 'role-buyer';
+  const roleRu  = role === 'seller' ? 'SELLER' : 'БАЙЕР';
 
   const div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.id = 'modalEditParticipant';
-  div.style.display = 'flex';
-
+  div.className = 'modal-overlay'; div.id = 'modalAddPerson'; div.style.display = 'flex';
   div.innerHTML =
-    '<div class="modal" style="width:560px;max-height:90vh;overflow-y:auto;">' +
-      '<div class="modal-title">Компания: ' + escHtml(u.company) + '</div>' +
-
-      // Company people block
-      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:12px 14px;margin-bottom:16px;">' +
-        '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Представители компании</div>' +
-        peopleRows +
-        '<button class="btn btn-outline btn-sm" style="margin-top:10px;font-size:11px;width:100%;" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove();openAddPersonModal({dataset:{company:&quot;' + escHtml(u.company).replace(/"/g,'') + '&quot;,role:&quot;' + u.role + '&quot;}})">+ Добавить представителя</button>' +
-          '+ Добавить представителя' +
-        '</button>' +
+    '<div class="modal" style="width:460px;">' +
+      '<div class="modal-title">' + (isNew ? 'Новая компания' : 'Добавить представителя') + '</div>' +
+      (isNew
+        ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+            '<div class="form-group"><label class="form-label">Название компании</label>' +
+              '<input id="ap_company" class="form-input" placeholder="Maldives Pro" oninput="apPreviewLogin(this.value)"></div>' +
+            '<div class="form-group"><label class="form-label">Роль</label>' +
+              '<select id="ap_role" class="form-input"><option value="seller">Селлер</option><option value="buyer">Байер</option></select></div>' +
+          '</div>'
+        : '<div style="padding:8px 12px;background:rgba(178,144,106,0.1);border-radius:8px;margin-bottom:12px;font-size:13px;">' +
+            '<span style="color:var(--text-dim);">Компания: </span>' +
+            '<b style="color:var(--gold);">' + esc(company) + '</b>' +
+            ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleRu + '</span>' +
+          '</div>' +
+          '<input id="ap_company" type="hidden" value="' + esc(company) + '">' +
+          '<input id="ap_role" type="hidden" value="' + esc(role) + '">') +
+      '<div class="form-group"><label class="form-label">Имя контакта</label>' +
+        '<input id="ap_name" class="form-input" placeholder="Анна Морозова"></div>' +
+      '<div style="padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;margin-bottom:4px;">' +
+        (!isNew ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Общий логин компании:</div>' : '') +
+        '<div style="display:flex;gap:12px;align-items:center;">' +
+          '<span style="color:var(--text-dim);">Логин:</span>' +
+          '<b id="ap_loginVal" style="font-family:monospace;color:var(--gold);">' + esc(sharedLogin) + '</b>' +
+          '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
+          '<b style="font-family:monospace;color:var(--gold-lt);">' + esc(sharedPass) + '</b>' +
+        '</div>' +
       '</div>' +
-
-      '<div class="divider" style="margin:0 0 14px;"></div>' +
-      '<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Данные участника: <b style="color:var(--gold);">' + escHtml(u.name) + '</b></div>' +
-
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-        '<div class="form-group"><label class="form-label">Имя</label><input id="ep_name" class="form-input" value="' + escHtml(u.name) + '"></div>' +
-        '<div class="form-group"><label class="form-label">Должность</label><input id="ep_position" class="form-input" value="' + escHtml(u.notes||'') + '" placeholder="Менеджер по продажам"></div>' +
-        '<div class="form-group"><label class="form-label">Telegram ID</label><input id="ep_tg" class="form-input" value="' + escHtml(u.telegram_id||'') + '" placeholder="@username"></div>' +
-        '<div class="form-group"><label class="form-label">Роль</label>' +
-          '<select id="ep_role" class="form-input">' +
-            '<option value="seller"' + (u.role==='seller'?' selected':'') + '>Селлер</option>' +
-            '<option value="buyer"' + (u.role==='buyer'?' selected':'') + '>Байер</option>' +
-          '</select></div>' +
-        // Hidden fields (company/login stay synced at company level)
-        '<input type="hidden" id="ep_company" value="' + escHtml(u.company) + '">' +
-        '<input type="hidden" id="ep_login" value="' + escHtml(u.login) + '">' +
-      '</div>' +
-
-      (isSeller ?
-        '<div class="divider"></div>' +
-        '<div class="form-group"><label class="form-label">Направления (через запятую)</label><input id="ep_dir" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '"></div>' +
-        '<div class="form-group"><label class="form-label">Целевая аудитория</label><input id="ep_aud" class="form-input" value="' + escHtml(u.audience||'') + '"></div>' +
-        '<div class="form-group"><label class="form-label">Ключевые услуги</label><input id="ep_srv" class="form-input" value="' + escHtml(u.services||'') + '"></div>' +
-        '<div class="form-group"><label class="form-label">УТП</label><textarea id="ep_utp" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>' +
-        '<div class="form-group"><label class="form-label">Заметки для партнёров</label><textarea id="ep_utp2" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>'
-      : '') +
-
-      '<div class="modal-actions">' +
-        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove()">Отмена</button>' +
-        '<button class="btn btn-gold btn-sm" onclick="saveEditParticipant()">Сохранить</button>' +
+      '<input id="ap_login_val" type="hidden" value="' + esc(sharedLogin) + '">' +
+      '<input id="ap_pass_val" type="hidden" value="' + esc(sharedPass) + '">' +
+      '<input id="ap_is_new" type="hidden" value="' + (isNew ? '1':'0') + '">' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalAddPerson\').remove()">Отмена</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="createPersonFromModal()">+ Создать</button>' +
       '</div>' +
     '</div>';
-
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
   document.body.appendChild(div);
 }
 
-async function saveEditParticipant() {
-  const updates = {
-    name:       document.getElementById('ep_name').value.trim(),
-    company:    document.getElementById('ep_company').value.trim(),
-    login:      document.getElementById('ep_login').value.trim().toLowerCase(),
-    role:       document.getElementById('ep_role').value,
-    telegram_id: document.getElementById('ep_tg').value.trim(),
-    notes:      document.getElementById('ep_position') ? document.getElementById('ep_position').value.trim() : '',
-  };
-
-  const role = updates.role;
-  if (role === 'seller') {
-    const dirEl = document.getElementById('ep_dir');
-    const dir = dirEl ? dirEl.value : '';
-    updates.directions = dir ? dir.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
-    updates.audience = (document.getElementById('ep_aud')||{value:''}).value.trim();
-    updates.services = (document.getElementById('ep_srv')||{value:''}).value.trim();
-    updates.utp      = (document.getElementById('ep_utp')||{value:''}).value.trim();
-    updates.profile_ready = !!(updates.directions.length && updates.utp);
-  }
-
-  const { error } = await sb.from('users').update(updates).eq('id', _editUserId);
-  if (error) { toast('Ошибка: ' + error.message); return; }
-
-  document.getElementById('modalEditParticipant').remove();
-  await loadUsers();
-  renderAdmin();
-  toast('Участник обновлён ✓');
+function apPreviewLogin(val) {
+  const el = document.getElementById('ap_loginVal');
+  if (el) el.textContent = generateLogin(val) || '—';
 }
 
-// ── MULTI-USER: check company limit ──
-// Sellers: max 2 per company unless admin override
-async function createParticipant() {
-  const company = document.getElementById('newCompany').value.trim();
-  const name    = document.getElementById('newName').value.trim();
-  const role    = document.getElementById('newRole').value;
+async function createPersonFromModal() {
+  const company = document.getElementById('ap_company').value.trim();
+  const name    = document.getElementById('ap_name').value.trim();
+  const role    = document.getElementById('ap_role').value;
+  const login   = document.getElementById('ap_login_val').value;
+  const pass    = document.getElementById('ap_pass_val').value;
+  const isNew   = document.getElementById('ap_is_new').value === '1';
+
   if (!company || !name) { toast('Заполни название компании и имя'); return; }
 
-  // Check company limit for sellers (2 per company)
-  if (role === 'seller') {
-    const { data: existing } = await sb.from('users')
-      .select('id').eq('company', company).eq('event_id', EVENT_ID).eq('role','seller');
-    if (existing && existing.length >= 2) {
-      if (!confirm('От компании "' + company + '" уже ' + existing.length + ' участника. Как организатор вы можете добавить ещё. Продолжить?')) return;
-    }
+  let finalLogin = login;
+  if (isNew) {
+    const { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
+    if (dup && dup.length) finalLogin = login + Math.floor(Math.random()*8+2);
   }
-
-  const login = generateLogin(company);
-  const pass  = _generatedPass || generatePassword();
-  const { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
-  const finalLogin = (dup && dup.length) ? login + Math.floor(Math.random()*8+2) : login;
 
   const { error } = await sb.from('users').insert({
     login: finalLogin, password_hash: pass, role, name, company,
@@ -1384,528 +1491,97 @@ async function createParticipant() {
   });
   if (error) { toast('Ошибка: ' + error.message); return; }
 
-  showCredentials(finalLogin, pass, name, company, role);
-  document.getElementById('newCompany').value = '';
-  document.getElementById('newName').value = '';
-  document.getElementById('loginPreview').style.display = 'none';
-  _generatedPass = '';
-  await loadUsers();
-  renderAdmin();
-}
-
-
-
-// ══════════════════════════════════════════════
-// PDF EXPORT — print schedule as PDF
-// ══════════════════════════════════════════════
-
-function exportSchedulePDF() {
-  // Build print content
-  const user = currentUser;
-  const confirmed = myMeetings.filter(function(m){ return m.status === 'confirmed'; });
-  const sorted = confirmed.sort(function(a,b){ return (a.slot&&a.slot.sort_order||0)-(b.slot&&b.slot.sort_order||0); });
-
-  const rows = sorted.map(function(m) {
-    const other = user.role === 'seller' ? m.buyer : m.seller;
-    return '<tr>' +
-      '<td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;font-weight:600;font-size:15px;color:#303672;">' + (m.slot&&m.slot.time_label||'—') + '</td>' +
-      '<td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;">' + (other&&other.name||'—') + '</td>' +
-      '<td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;color:#666;">' + (other&&other.company||'—') + '</td>' +
-      '</tr>';
-  }).join('');
-
-  const roleRu = user.role === 'seller' ? 'Селлер' : 'Байер';
-  const today = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
-
-  const win = window.open('', '_blank');
-  win.document.write(
-    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<title>Расписание · ' + user.name + '</title>' +
-    '<style>' +
-      'body { font-family: Arial, sans-serif; color: #1a1d4a; margin: 0; padding: 32px; }' +
-      'h1 { font-size: 22px; margin-bottom: 4px; color: #1a1d4a; }' +
-      '.meta { font-size: 13px; color: #888; margin-bottom: 24px; }' +
-      '.badge { display:inline-block;background:#B2906A;color:#fff;padding:2px 10px;border-radius:12px;font-size:11px;margin-left:8px;vertical-align:middle; }' +
-      'table { width: 100%; border-collapse: collapse; }' +
-      'th { text-align:left; padding:10px 14px; background:#1a1d4a; color:#B2906A; font-size:12px; letter-spacing:0.05em; }' +
-      'tr:last-child td { border-bottom: none; }' +
-      '.header-block { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }' +
-      '.logo-text { font-size:11px; color:#888; text-align:right; }' +
-      '.logo-name { font-size:18px; font-weight:bold; color:#1a1d4a; letter-spacing:1px; }' +
-      '.schedule-block { border:1px solid #e0d5c8; border-radius:8px; overflow:hidden; }' +
-      '.footer { margin-top:24px; font-size:11px; color:#aaa; text-align:center; }' +
-      '.summary { background:#f9f5f0; border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; gap:32px; }' +
-      '.sum-item { text-align:center; }' +
-      '.sum-num { font-size:24px; font-weight:bold; color:#1a1d4a; }' +
-      '.sum-label { font-size:11px; color:#888; }' +
-      '@media print { body { padding: 20px; } }' +
-    '</style></head><body>' +
-    '<div class="header-block">' +
-      '<div>' +
-        '<h1>' + user.name + ' <span class="badge">' + roleRu + '</span></h1>' +
-        '<div class="meta">' + user.company + ' · Travel Synergy Workshop · ' + today + '</div>' +
-      '</div>' +
-      '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzk1IiBoZWlnaHQ9IjE2OCIgdmlld0JveD0iMCAwIDc5NSAxNjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMzgxLjEgMTA1LjNMMzgxLjkgMTA1LjlDMzc4Ljk2NyAxMDkuNSAzNzUuMjMzIDExMi4yMzQgMzcwLjcgMTE0LjFDMzY2LjIzMyAxMTUuOSAzNjEuNSAxMTYuOCAzNTYuNSAxMTYuOEMzNDUuNCAxMTYuOCAzMzYuNCAxMTMuNCAzMjkuNiAxMDYuN0MzMjIuOCA5OS45MDA0IDMxOS41IDkxLjAwMDQgMzE5LjUgODAuMTAwNEMzMTkuNSA2OS40MDA0IDMyMi43IDYwLjYwMDQgMzI5LjMgNTMuODAwNEMzMzUuOSA0Ni45MDA0IDM0NC40IDQzLjQwMDQgMzU0LjkgNDMuNDAwNEMzNTkuOSA0My40MDA0IDM2NC43MzMgNDQuMzAwNCAzNjkuNCA0Ni4xMDA0QzM3NC4xMzMgNDcuODMzNyAzNzguMDMzIDUwLjUwMDQgMzgxLjEgNTQuMTAwNEwzODEuNiA1NC43MDA0TDM4MS4xIDU1LjQwMDRMMzc5LjcgNTcuMTAwNEwzNzkgNTcuODAwNEwzNzguMyA1Ny4yMDA0QzM3NC4zNjYgNTMuODAwNCAzNzAuNjMzIDUxLjQwMDQgMzY3LjEgNTAuMDAwNEwzNjcuNSA0OS4xMDA0TDM2Ny40IDQ5LjIwMDRMMzY3LjEgNTAuMDAwNEMzNjMuNyA0OC42MDA0IDM1OS41MzMgNDcuOTAwNCAzNTQuNiA0Ny45MDA0QzM0NSA0Ny45MDA0IDMzNy43IDUwLjkwMDQgMzMyLjIgNTYuOTAwNEMzMjYuOSA2Mi45MDA0IDMyNC4xIDcwLjYwMDQgMzI0LjEgODAuMTAwNEMzMjQuMSA5MC4xMDA0IDMyNy4xIDk3LjkwMDQgMzMzIDEwMy42QzMzOC45IDEwOS40IDM0Ni43IDExMi4zIDM1Ni41IDExMi4zQzM2NS42IDExMi4zIDM3MyAxMDkuMiAzNzguOSAxMDMuMUwzNzkuNiAxMDIuM0wzODAuMyAxMDMuMUwzODEuOCAxMDQuNkwzODEuMSAxMDUuM1pNNzEwLjQgNDQuMzAwNFYxMTUuOUg3MDYuM0w3MDYgMTE1LjVMNjU2LjkgNTIuNDAwNFYxMTUuOUg2NTIuMlY0NC4zMDA0SDY1Ni40TDY1Ni43IDQ0LjcwMDRMNzA1LjggMTA3LjhWNDQuMzAwNEg3MTAuNFpNNzk0LjggMTE1LjlINzg5LjhMNzg5LjUgMTE1LjNMNzc5LjggOTMuMjAwNEg3NDIuNkw3MzMgMTE1LjNMNzMyLjcgMTE1LjlINzI3LjhMNzI4LjQgMTE0LjVMNzU4LjkgNDQuNTAwNEw3NTkuMSA0My45MDA0SDc2My4xTDc2My40IDQ0LjUwMDRMNzk0LjIgMTE0LjVMNzk0LjggMTE1LjlaTTc3Ny45IDg4LjcwMDRMNzYxLjEgNTAuNDAwNEw3NDQuNiA4OC43MDA0SDc3Ny45Wk00NjYuOSA4MC4xMDA0QzQ2Ni45IDkwLjM2NzEgNDYzLjQzMyA5OS4wMzM3IDQ1Ni41IDEwNi4xQzQ0OS43IDExMy4yIDQ0MS4yIDExNi44IDQzMS4xIDExNi44QzQyMC44IDExNi44IDQxMi4yIDExMy4yIDQwNS40IDEwNi4xTDQwNi4xIDEwNS41VjEwNS40TDQwNS40IDEwNi4xQzM5OC42NjcgOTguOTY3MSAzOTUuMyA5MC4zMDA0IDM5NS4zIDgwLjEwMDRDMzk1LjMgNjkuOTAwNCAzOTguNzMzIDYxLjI2NzEgNDA1LjYgNTQuMjAwNEM0MTIuNSA0Ny4wMDA0IDQyMSA0My40MDA0IDQzMS4xIDQzLjQwMDRDNDQxLjQgNDMuNDAwNCA0NTAgNDcuMDAwNCA0NTYuNyA1NC4xMDA0QzQ2My41IDYxLjIwMDQgNDY2LjkgNjkuOTAwNCA0NjYuOSA4MC4xMDA0Wk00NjIuMiA4MC4xMDA0QzQ2Mi4yIDcxLjE2NzEgNDU5LjIgNjMuNTY3MSA0NTMuMiA1Ny4zMDA0QzQ0Ny4yIDUxLjAwMDQgNDM5LjkgNDcuOTAwNCA0MzEuMSA0Ny45MDA0QzQyMi4zIDQ3LjkwMDQgNDE0LjkgNTEuMDY3MSA0MDguOSA1Ny40MDA0TDQwOC4yIDU2LjcwMDRMNDA4LjMgNTYuODAwNEw0MDguOSA1Ny40MDA0QzQwMi45NjcgNjMuNzMzNyA0MDAgNzEuMzAwNCA0MDAgODAuMTAwNEM0MDAgODguODMzNyA0MDMgOTYuNDAwNCA0MDkgMTAyLjhDNDE1LjIgMTA5LjEgNDIyLjUgMTEyLjMgNDMxLjEgMTEyLjNDNDQwIDExMi4zIDQ0Ny40IDEwOS4yIDQ1My4zIDEwMi45QzQ1OS4yMzMgOTYuNTY3MSA0NjIuMiA4OC45NjcxIDQ2Mi4yIDgwLjEwMDRaTTU0NS44IDExNC4zTDU0NyAxMTUuOUg1NDEuMkw1NDAuOSAxMTUuNUw1MTYuNyA4NS4yMDA0SDQ5My4xVjExNS45SDQ4OC40VjQ0LjMwMDRINTE0LjZDNTIzLjIgNDQuMzAwNCA1MjkuOSA0NS45MDA0IDUzNC40IDQ5LjMwMDRDNTM5IDUyLjcwMDQgNTQxLjIgNTcuODAwNCA1NDEuMiA2NC40MDA0QzU0MS4yIDcwLjEwMDQgNTM5LjEgNzQuODAwNCA1MzQuOSA3OC40MDA0QzUzMS4yMzMgODEuNDY3MSA1MjYuODY2IDgzLjQzMzcgNTIxLjggODQuMzAwNEw1NDUuOCAxMTQuM1pNNTI1IDc5LjEwMDRDNTI4LjIgNzcuOTY3MSA1MzAuOTMzIDc2LjEwMDQgNTMzLjIgNzMuNTAwNEM1MzUuNDY3IDcwLjk2NzEgNTM2LjYgNjcuOTMzNyA1MzYuNiA2NC40MDA0QzUzNi42IDU5LjIwMDQgNTM0LjggNTUuMzAwNCA1MzEuMiA1Mi44MDA0QzUyNy43IDUwLjIwMDQgNTIyLjIgNDguODAwNCA1MTQuNiA0OC44MDA0SDQ5My4xVjgwLjcwMDRINTE0LjdDNTE4LjMgODAuNzAwNCA1MjEuNzMzIDgwLjE2NzEgNTI1IDc5LjEwMDRaTTM4MS43IDEwNC43TDM4Mi4zIDEwNS4zTDM4MS44IDEwNkwzODEgMTA1LjRMMzgxLjcgMTA0LjdaTTYyMC40IDU0LjEwMDRDNjI3LjEgNjEuMjAwNCA2MzAuNSA2OS45MDA0IDYzMC41IDgwLjEwMDRDNjMwLjUgOTAuNDAwNCA2MjcuMSA5OS4xMDA0IDYyMC4yIDEwNi4xQzYxMy40IDExMy4yIDYwNC45IDExNi44IDU5NC43IDExNi44QzU4NC41IDExNi44IDU3NS45IDExMy4yIDU2OS4xIDEwNi4xQzU2Mi4zNjcgOTguOTY3MSA1NTkgOTAuMzAwNCA1NTkgODAuMTAwNEM1NTkgNjkuOTAwNCA1NjIuNDMzIDYxLjI2NzEgNTY5LjMgNTQuMjAwNEM1NzYuMiA0Ny4wMDA0IDU4NC43IDQzLjQwMDQgNTk0LjcgNDMuNDAwNEM2MDUuMSA0My40MDA0IDYxMy42IDQ3LjAwMDQgNjIwLjQgNTQuMTAwNFpNNjI1LjggODAuMTAwNEM2MjUuOCA3MS4xNjcxIDYyMi44MzMgNjMuNTY3MSA2MTYuOSA1Ny4zMDA0QzYxMC45IDUxLjEwMDQgNjAzLjUgNDcuOTAwNCA1OTQuNyA0Ny45MDA0QzU4NS45IDQ3LjkwMDQgNTc4LjYgNTEuMTAwNCA1NzIuNiA1Ny40MDA0QzU2Ni42IDYzLjczMzcgNTYzLjYgNzEuMzAwNCA1NjMuNiA4MC4xMDA0QzU2My42IDg4LjgzMzcgNTY2LjYzMyA5Ni40MDA0IDU3Mi43IDEwMi44QzU3OC44IDEwOS4yIDU4Ni4xIDExMi4zIDU5NC43IDExMi4zQzYwMy43IDExMi4zIDYxMS4xIDEwOS4yIDYxNyAxMDIuOUM2MjIuODY3IDk2LjU2NzEgNjI1LjggODguOTY3MSA2MjUuOCA4MC4xMDA0WiIgZmlsbD0iIzMwMzQ3NiIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTQ1OC42IDE0Ny42QzQ2MCAxNDkuNCA0NjAuNyAxNTEuNSA0NjAuNyAxNTMuOUM0NjAuNyAxNTQuNTY3IDQ2MC42MzMgMTU1LjMzNCA0NjAuNSAxNTYuMlYxNTYuNUg0NDMuMkM0NDMuNCAxNTguNjM0IDQ0NC4yIDE2MC4zIDQ0NS42IDE2MS41QzQ0Ny4wNjYgMTYyLjc2NyA0NDkgMTYzLjQgNDUxLjQgMTYzLjRDNDUyLjUzMyAxNjMuNCA0NTMuNjY2IDE2My4xIDQ1NC44IDE2Mi41QzQ1NS45MzMgMTYxLjkgNDU2LjgzMyAxNjEuMSA0NTcuNSAxNjAuMUw0NTcuNyAxNTkuOEw0NTggMTYwTDQ1OS44IDE2MS42TDQ2MCAxNjEuOEw0NTkuOCAxNjJDNDU4Ljg2NiAxNjMuNDY3IDQ1Ny42MzMgMTY0LjYgNDU2LjEgMTY1LjRDNDU0LjU2NiAxNjYuMiA0NTIuOTMzIDE2Ni42IDQ1MS4yIDE2Ni42QzQ0Ny44IDE2Ni42IDQ0NS4wMzMgMTY1LjU2NyA0NDIuOSAxNjMuNUM0NDAuODMzIDE2MS4zNjcgNDM5LjggMTU4LjYzNCA0MzkuOCAxNTUuM0M0MzkuOCAxNTEuOTY3IDQ0MC44IDE0OS4yNjcgNDQyLjggMTQ3LjJDNDQ0LjggMTQ1LjA2NyA0NDcuNDMzIDE0NCA0NTAuNyAxNDRDNDUxLjMgMTQ0IDQ1Mi4wNjYgMTQ0LjEgNDUzIDE0NC4zQzQ1NS40IDE0NC43NjcgNDU3LjI2NiAxNDUuODY3IDQ1OC42IDE0Ny42Wk00NTcuMiAxNTMuNEM0NTcuMDY2IDE1MS40NjcgNDU2LjQzMyAxNDkuOTY3IDQ1NS4zIDE0OC45QzQ1NC4xNjYgMTQ3Ljc2NyA0NTIuNTY2IDE0Ny4yIDQ1MC41IDE0Ny4yQzQ0OC41IDE0Ny4yIDQ0Ni44MzMgMTQ3LjggNDQ1LjUgMTQ5QzQ0NC4yMzMgMTUwLjEzNCA0NDMuNDY2IDE1MS42IDQ0My4yIDE1My40SDQ1Ny4yWk00NzcgMTM2LjJWMTY2LjJINDczLjdWMTM2LjJINDc3Wk0zOTguOCAxNDYuNEM0MDAuNCAxNDcuOSA0MDEuMSAxNTAuMSA0MDEuMSAxNTIuOVYxNjYuMkgzOTcuOVYxNjMuNEMzOTcuMSAxNjQuMjY3IDM5Ni4xIDE2NC45NjcgMzk0LjkgMTY1LjVDMzkzLjQzMyAxNjYuMTY3IDM5MS45IDE2Ni41IDM5MC4zIDE2Ni41QzM4OC4xNjYgMTY2LjUgMzg2LjMgMTY1Ljk2NyAzODQuNyAxNjQuOUMzODMuMTY2IDE2My43IDM4Mi40IDE2Mi4wNjcgMzgyLjQgMTYwQzM4Mi40IDE1Ny43MzQgMzgzLjMgMTU2LjAzNCAzODUuMSAxNTQuOUMzODYuOSAxNTMuNzY3IDM4OS41IDE1My4yMzQgMzkyLjkgMTUzLjNDMzk0Ljc2NiAxNTMuMyAzOTYuNDMzIDE1My40NjcgMzk3LjkgMTUzLjhDMzk3LjgzMyAxNTEuNjY3IDM5Ny4zNjYgMTUwLjA2NyAzOTYuNSAxNDlDMzk1LjYgMTQ3LjkgMzk0LjEgMTQ3LjMgMzkxLjkgMTQ3LjNDMzg5Ljc2NiAxNDcuMyAzODcuNyAxNDguMSAzODUuNyAxNDkuN0wzODUuNCAxNDkuOUwzODUuMiAxNDkuNkwzODMuOCAxNDcuNkwzODQuMSAxNDcuNEwzODMuOSAxNDcuMUMzODQuOSAxNDYuMTY3IDM4Ni4xNjYgMTQ1LjQzNCAzODcuNyAxNDQuOUMzODkuMjMzIDE0NC4zNjcgMzkwLjczMyAxNDQuMSAzOTIuMiAxNDQuMUMzOTUgMTQ0LjEgMzk3LjMgMTQ0LjggMzk4LjggMTQ2LjRaTTQzMC45IDE0NC42TDQzMC43IDE0NS4xTDQyMS4yIDE2Nkw0MjEuMSAxNjYuMkg0MTguOUw0MTguOCAxNjYuMUw0MDguOSAxNDUuMUw0MDguNyAxNDQuNkg0MTIuNUw0MTIuNiAxNDQuOEw0MjAuMSAxNjFMNDI3LjMgMTQ0LjhMNDI3LjQgMTQ0LjZINDMwLjlaTTM3Mi40IDE0Ni4yTDM3Mi42IDE0Ni40TDM3Mi40IDE0Ni42TDM3MC42IDE0OC40TDM3MC4zIDE0OC42TDM3MC4xIDE0OC40QzM2OS41IDE0Ny43IDM2OC43IDE0Ny4zIDM2Ny42IDE0Ny4zQzM2Ni42IDE0Ny4zIDM2NS43MzMgMTQ3LjY2NyAzNjUgMTQ4LjRDMzY0LjI2NiAxNDkuMTM0IDM2My43NjYgMTUwLjAzNCAzNjMuNSAxNTEuMVYxNjYuMkgzNjAuMlYxNDQuNkgzNjMuNVYxNDUuOUMzNjMuOSAxNDUuNDM0IDM2NC4zNjYgMTQ1LjA2NyAzNjQuOSAxNDQuOEMzNjUuOSAxNDQuNCAzNjYuOSAxNDQuMTY3IDM2Ny45IDE0NC4xQzM2OS43NjYgMTQ0LjEgMzcxLjI2NiAxNDQuOCAzNzIuNCAxNDYuMlpNMzg0LjEgMTQ3LjRMMzgzLjggMTQ3LjZMMzgzLjcgMTQ3LjNMMzgzLjkgMTQ3LjFMMzg0LjEgMTQ3LjRaTTM5Ny44IDE1Ni45QzM5Ni42NjYgMTU2LjUgMzk1LjE2NiAxNTYuMyAzOTMuMyAxNTYuM0MzOTAuNyAxNTYuMyAzODguNzY2IDE1Ni42IDM4Ny41IDE1Ny4yQzM4Ni45IDE1Ny41MzQgMzg2LjQ2NiAxNTcuOSAzODYuMiAxNTguM0MzODUuOTMzIDE1OC43NjcgMzg1LjggMTU5LjI2NyAzODUuOCAxNTkuOEMzODUuOCAxNjEuMDY3IDM4Ni4zIDE2MiAzODcuMyAxNjIuNkMzODguMzY2IDE2My4yIDM4OS42IDE2My41IDM5MSAxNjMuNUMzOTIuNCAxNjMuNSAzOTMuNzMzIDE2My4wNjcgMzk1IDE2Mi4yTDM5NS4yIDE2Mi40VjE2Mi41TDM5NSAxNjIuMkMzOTYuMzMzIDE2MS4zMzQgMzk3LjI2NiAxNjAuMyAzOTcuOCAxNTkuMVYxNTYuOVpNMzQ4LjcgMTYzLjNMMzQ4LjkgMTYzLjVMMzQ4LjcgMTYzLjdDMzQ4LjEgMTY0LjU2NyAzNDcuMjY2IDE2NS4yNjcgMzQ2LjIgMTY1LjhDMzQ1LjA2NiAxNjYuMjY3IDM0My45NjYgMTY2LjUgMzQyLjkgMTY2LjVDMzQwLjYgMTY2LjUgMzM4LjggMTY1LjcgMzM3LjggMTY0LjFDMzM2LjggMTYyLjU2NyAzMzYuMyAxNjAuNTY3IDMzNi4zIDE1OC4xVjE0Ny44SDMzMi4xVjE0NC42SDMzNi4zVjEzOS45SDMzOS42VjE0NC42SDM0N1YxNDcuOEgzMzkuNlYxNTcuNUMzMzkuNiAxNTguMzY3IDMzOS42MzMgMTU5LjEgMzM5LjcgMTU5LjdDMzM5Ljc2NiAxNjAuMyAzMzkuOTMzIDE2MC45MzQgMzQwLjIgMTYxLjZDMzQwLjQ2NiAxNjIuMiAzNDAuODMzIDE2Mi42MzQgMzQxLjMgMTYyLjlDMzQxLjgzMyAxNjMuMjM0IDM0Mi41MzMgMTYzLjQgMzQzLjQgMTYzLjRDMzQ0LjUgMTYzLjQgMzQ1LjYgMTYyLjggMzQ2LjYgMTYxLjdMMzQ2LjggMTYxLjRMMzQ3LjEgMTYxLjdMMzQ4LjcgMTYzLjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTE5LjYgMjcuM0MxMTkuNiAxMi42IDEzOCAxLjIgMTM4LjggMC44MDAwMDNMMTQwIDBMMTQxLjIgMC44MDAwMDNDMTQyIDEuMiAxNjAuNCAxMi42IDE2MC40IDI3LjNDMTYwLjQgNDIuMSAxNDIgNTMuNSAxNDEuMiA1My45TDE0MCA1NC43TDEzOC44IDUzLjlDMTM4IDUzLjUgMTE5LjYgNDIuMSAxMTkuNiAyNy4zWk0xMjQuNCAyNy4zQzEyNC40IDM3LjUgMTM2LjEgNDYuNCAxNDAgNDkuMUMxNDMuOSA0Ni40IDE1NS42IDM3LjQgMTU1LjYgMjcuM0MxNTUuNiAxNy4yIDE0My45IDguMzAwMDEgMTQwIDUuNjAwMDFDMTM2LjEgOC4zMDAwMSAxMjQuNCAxNy4yIDEyNC40IDI3LjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGQ9Ik0xNDYuOCAxMDkuMkMxNjguMyA3OC4yOTk2IDE5MC42IDQ2LjI5OTYgMjE3LjMgNDYuMjk5NkMyMTcuMyA0My41OTk2IDIxNSA0MS40OTk2IDIxMi4zIDQxLjg5OTZDMTg1LjQgNDUuMzk5NiAxNjMuOCA3Ni4zOTk2IDE0Mi45IDEwNi41QzE0MS45IDEwNy45IDE0MC45MzMgMTA5LjI2NiAxNDAgMTEwLjZDMTM5LjA2NyAxMDkuMjY2IDEzOC4xIDEwNy45IDEzNy4xIDEwNi41QzExNi4yIDc2LjQ5OTYgOTQuNiA0NS4zOTk2IDY3LjcgNDEuODk5NkM2NS4xIDQxLjQ5OTYgNjIuNyA0My41OTk2IDYyLjcgNDYuMjk5NkM4OS4zOTk5IDQ2LjI5OTYgMTExLjcgNzguMjk5NiAxMzMuMiAxMDkuMkMxMzQuNTMzIDExMS4wNjYgMTM1LjgzMyAxMTIuOTMzIDEzNy4xIDExNC44QzEyOC44IDEyNi41IDEyMC44IDEzNy40IDExMi41IDE0NkMxMDYuMSAxMzguMyA5OS45OTk4IDEyOC44IDkzLjc5OTggMTE5Qzg1LjI5OTggMTA1LjcgNzYuNTk5OSA5MS45OTk2IDY2LjM5OTkgODEuNDk5NkM1NS45OTk5IDcwLjg5OTYgNDUuNSA2NS4wOTk2IDM0LjIgNjMuNjk5NkMzMS41IDYzLjM5OTYgMjkuMDk5OSA2NS40OTk2IDI5LjA5OTkgNjguMTk5NkM1NS43OTk5IDY4LjE5OTYgNzMuMDk5OCA5NS4yOTk2IDg5Ljc5OTggMTIxLjVDOTYuMTk5OCAxMzEuNiAxMDIuNCAxNDEuNCAxMDkuMSAxNDkuNEM5OS4zOTk5IDE1OC42IDkwLjQ5OTkgMTYzLjEgODEuODk5OSAxNjMuMUM2Ni41OTk5IDE2My4xIDU3LjE5OTggMTQ2LjkgNDcuMjk5OCAxMjkuN0M0MS41OTk4IDExOS44IDM1LjggMTA5LjcgMjguNSAxMDEuOUMyMS4zIDk0LjM5OTYgMTMuNTk5OSA5MC4wOTk2IDUuMDk5ODUgODguODk5NkMzLjc5OTg1IDg4Ljc5OTYgMi40OTk4NSA4OS4xOTk2IDEuNTk5ODUgODkuOTk5NkMwLjU5OTg1NCA5MC43OTk2IDAgOTEuOTk5NiAwIDkzLjI5OTZDMjAuOSA5My4yOTk2IDMyLjIgMTEzIDQzLjIgMTMyQzQ4LjQgMTQxLjIgNTMuMzk5OSAxNDkuOCA1OS4zOTk5IDE1Ni40QzY2LjI5OTkgMTY0LjIgNzMuNjk5OSAxNjcuOSA4MS44OTk5IDE2Ny45Qzg3Ljc5OTkgMTY3LjkgOTMuNyAxNjYuMSA5OS43IDE2Mi43QzEwNC45IDE1OS42IDExMC4zIDE1NS4zIDExNiAxNDkuM0MxMjYuNCAxMzguNSAxMzYuMyAxMjQuMyAxNDYuOCAxMDkuMloiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI1MC44IDY4LjIwMDVDMjUwLjggNjUuNTAwNSAyNDguNSA2My40MDA1IDI0NS44IDYzLjcwMDVDMjM0LjUgNjUuMTAwNSAyMjQgNzAuOTAwNCAyMTMuNiA4MS41MDA0QzIwMy40IDkyLjAwMDQgMTk0LjcgMTA1LjcgMTg2LjIgMTE5QzE4MCAxMjguOCAxNzMuOSAxMzguMyAxNjcuNSAxNDZDMTYwLjMgMTM4LjYgMTUzLjQgMTI5LjUgMTQ2LjMgMTE5LjZDMTQ1LjMgMTIxIDE0NC4zMzMgMTIyLjMzNCAxNDMuNCAxMjMuNkMxNTAuMiAxMzMuMiAxNTcgMTQyIDE2NC4xIDE0OS4zQzE2NC4xNjcgMTQ5LjQzNCAxNjQuMjY3IDE0OS41NjcgMTY0LjQgMTQ5LjdDMTU2LjkgMTU3LjggMTQ5IDE2My4xIDE0MCAxNjMuMUMxMzIuNSAxNjMuMSAxMjUuNyAxNTkuNCAxMTkuMyAxNTMuM0MxMTguMDMzIDE1NC42MzQgMTE2LjkzMyAxNTUuOCAxMTYgMTU2LjhDMTIzLjIgMTYzLjYgMTMxIDE2Ny45IDE0MCAxNjcuOUMxNjAuNyAxNjcuOSAxNzUuMSAxNDUuNCAxOTAuMiAxMjEuNUMyMDYuOSA5NS4zMDA0IDIyNC4yIDY4LjIwMDUgMjUwLjggNjguMjAwNVoiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI3NC45IDg4Ljg5OTZDMjY2LjMgOTAuMDk5NiAyNTguNiA5NC4zOTk2IDI1MS41IDEwMS45QzI0NC4yIDEwOS43IDIzOC4zIDExOS45IDIzMi43IDEyOS43QzIyMi44IDE0Ni45IDIxMy40IDE2My4xIDE5OC4xIDE2My4xQzE5MSAxNjMuMSAxODMuNyAxNjAgMTc1LjkgMTUzLjhMMTcyLjkgMTU3LjVDMTc1LjQgMTU5LjUgMTc3LjkgMTYxLjMgMTgwLjMgMTYyLjdDMTg2LjMgMTY2LjEgMTkyLjIgMTY3LjkgMTk4LjEgMTY3LjlDMjA2LjMgMTY3LjkgMjEzLjcgMTY0LjEgMjIwLjYgMTU2LjRDMjI2LjYgMTQ5LjggMjMxLjYgMTQxLjIgMjM2LjggMTMyQzI0Ny44IDExMyAyNTkuMSA5My4yOTk2IDI3OS45IDkzLjI5OTZDMjc5LjkgOTAuNTk5NiAyNzcuNSA4OC40OTk2IDI3NC45IDg4Ljg5OTZaIiBmaWxsPSIjMzAzNDc2Ii8+Cjwvc3ZnPgo=" style="height:36px;width:auto;" alt="Corona Travel">' +
-    '</div>' +
-    '<div class="summary">' +
-      '<div class="sum-item"><div class="sum-num">' + sorted.length + '</div><div class="sum-label">встреч</div></div>' +
-      '<div class="sum-item"><div class="sum-num">10:00</div><div class="sum-label">начало</div></div>' +
-      '<div class="sum-item"><div class="sum-num">12:45</div><div class="sum-label">конец сессии</div></div>' +
-    '</div>' +
-    '<div class="schedule-block">' +
-      '<table>' +
-        '<thead><tr><th>Время</th><th>Участник</th><th>Компания</th></tr></thead>' +
-        '<tbody>' + (rows || '<tr><td colspan="3" style="padding:20px;text-align:center;color:#aaa;">Нет подтверждённых встреч</td></tr>') + '</tbody>' +
-      '</table>' +
-    '</div>' +
-    '<div class="footer">Travel Synergy Workshop · Corona Travel · Распечатано ' + today + '</div>' +
-    '</body></html>'
-  );
-  win.document.close();
-  setTimeout(function(){ win.print(); }, 400);
-}
-
-function exportAdminPDF() {
-  // Admin exports full matrix
-  const today = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
-
-  loadAllMeetings().then(function(all) {
-    const sellers = allSellers;
-    const buyers  = allBuyers;
-    const confirmed = all.filter(function(m){ return m.status==='confirmed'; });
-    const pending   = all.filter(function(m){ return m.status==='pending'; });
-
-    let matrixRows = sellers.map(function(s) {
-      const cells = buyers.map(function(b) {
-        const m = all.find(function(mt){ return (mt.seller_id===s.id||mt.seller&&mt.seller.id===s.id) && (mt.buyer_id===b.id||mt.buyer&&mt.buyer.id===b.id); });
-        if (!m) return '<td style="padding:8px;border:1px solid #eee;color:#ccc;text-align:center;">—</td>';
-        const bg = m.status==='confirmed' ? '#e8f5ee' : '#fff8ee';
-        const col = m.status==='confirmed' ? '#2e7d52' : '#b8620a';
-        return '<td style="padding:8px;border:1px solid #eee;background:'+bg+';color:'+col+';text-align:center;font-weight:600;">' + (m.slot&&m.slot.time_label||'—') + '</td>';
-      }).join('');
-      return '<tr><td style="padding:8px 12px;border:1px solid #eee;font-weight:600;">' + s.company + '<br><span style="font-size:11px;color:#888;">' + s.name + '</span></td>' + cells + '</tr>';
-    }).join('');
-
-    const buyerHeaders = buyers.map(function(b){ return '<th style="padding:8px;background:#1a1d4a;color:#B2906A;font-size:11px;white-space:nowrap;">' + b.company + '</th>'; }).join('');
-
-    const win = window.open('', '_blank');
-    win.document.write(
-      '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Матрица встреч</title>' +
-      '<style>body{font-family:Arial,sans-serif;color:#1a1d4a;margin:0;padding:24px;}h1{font-size:20px;}table{border-collapse:collapse;width:100%;font-size:12px;}.summary{display:flex;gap:24px;margin:16px 0;}.sum-item{background:#f5f5f5;border-radius:6px;padding:10px 16px;text-align:center;}.sum-num{font-size:20px;font-weight:bold;color:#1a1d4a;}.sum-label{font-size:10px;color:#888;}</style>' +
-      '</head><body>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-        '<h1>Матрица встреч · Travel Synergy</h1>' +
-        '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzk1IiBoZWlnaHQ9IjE2OCIgdmlld0JveD0iMCAwIDc5NSAxNjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMzgxLjEgMTA1LjNMMzgxLjkgMTA1LjlDMzc4Ljk2NyAxMDkuNSAzNzUuMjMzIDExMi4yMzQgMzcwLjcgMTE0LjFDMzY2LjIzMyAxMTUuOSAzNjEuNSAxMTYuOCAzNTYuNSAxMTYuOEMzNDUuNCAxMTYuOCAzMzYuNCAxMTMuNCAzMjkuNiAxMDYuN0MzMjIuOCA5OS45MDA0IDMxOS41IDkxLjAwMDQgMzE5LjUgODAuMTAwNEMzMTkuNSA2OS40MDA0IDMyMi43IDYwLjYwMDQgMzI5LjMgNTMuODAwNEMzMzUuOSA0Ni45MDA0IDM0NC40IDQzLjQwMDQgMzU0LjkgNDMuNDAwNEMzNTkuOSA0My40MDA0IDM2NC43MzMgNDQuMzAwNCAzNjkuNCA0Ni4xMDA0QzM3NC4xMzMgNDcuODMzNyAzNzguMDMzIDUwLjUwMDQgMzgxLjEgNTQuMTAwNEwzODEuNiA1NC43MDA0TDM4MS4xIDU1LjQwMDRMMzc5LjcgNTcuMTAwNEwzNzkgNTcuODAwNEwzNzguMyA1Ny4yMDA0QzM3NC4zNjYgNTMuODAwNCAzNzAuNjMzIDUxLjQwMDQgMzY3LjEgNTAuMDAwNEwzNjcuNSA0OS4xMDA0TDM2Ny40IDQ5LjIwMDRMMzY3LjEgNTAuMDAwNEMzNjMuNyA0OC42MDA0IDM1OS41MzMgNDcuOTAwNCAzNTQuNiA0Ny45MDA0QzM0NSA0Ny45MDA0IDMzNy43IDUwLjkwMDQgMzMyLjIgNTYuOTAwNEMzMjYuOSA2Mi45MDA0IDMyNC4xIDcwLjYwMDQgMzI0LjEgODAuMTAwNEMzMjQuMSA5MC4xMDA0IDMyNy4xIDk3LjkwMDQgMzMzIDEwMy42QzMzOC45IDEwOS40IDM0Ni43IDExMi4zIDM1Ni41IDExMi4zQzM2NS42IDExMi4zIDM3MyAxMDkuMiAzNzguOSAxMDMuMUwzNzkuNiAxMDIuM0wzODAuMyAxMDMuMUwzODEuOCAxMDQuNkwzODEuMSAxMDUuM1pNNzEwLjQgNDQuMzAwNFYxMTUuOUg3MDYuM0w3MDYgMTE1LjVMNjU2LjkgNTIuNDAwNFYxMTUuOUg2NTIuMlY0NC4zMDA0SDY1Ni40TDY1Ni43IDQ0LjcwMDRMNzA1LjggMTA3LjhWNDQuMzAwNEg3MTAuNFpNNzk0LjggMTE1LjlINzg5LjhMNzg5LjUgMTE1LjNMNzc5LjggOTMuMjAwNEg3NDIuNkw3MzMgMTE1LjNMNzMyLjcgMTE1LjlINzI3LjhMNzI4LjQgMTE0LjVMNzU4LjkgNDQuNTAwNEw3NTkuMSA0My45MDA0SDc2My4xTDc2My40IDQ0LjUwMDRMNzk0LjIgMTE0LjVMNzk0LjggMTE1LjlaTTc3Ny45IDg4LjcwMDRMNzYxLjEgNTAuNDAwNEw3NDQuNiA4OC43MDA0SDc3Ny45Wk00NjYuOSA4MC4xMDA0QzQ2Ni45IDkwLjM2NzEgNDYzLjQzMyA5OS4wMzM3IDQ1Ni41IDEwNi4xQzQ0OS43IDExMy4yIDQ0MS4yIDExNi44IDQzMS4xIDExNi44QzQyMC44IDExNi44IDQxMi4yIDExMy4yIDQwNS40IDEwNi4xTDQwNi4xIDEwNS41VjEwNS40TDQwNS40IDEwNi4xQzM5OC42NjcgOTguOTY3MSAzOTUuMyA5MC4zMDA0IDM5NS4zIDgwLjEwMDRDMzk1LjMgNjkuOTAwNCAzOTguNzMzIDYxLjI2NzEgNDA1LjYgNTQuMjAwNEM0MTIuNSA0Ny4wMDA0IDQyMSA0My40MDA0IDQzMS4xIDQzLjQwMDRDNDQxLjQgNDMuNDAwNCA0NTAgNDcuMDAwNCA0NTYuNyA1NC4xMDA0QzQ2My41IDYxLjIwMDQgNDY2LjkgNjkuOTAwNCA0NjYuOSA4MC4xMDA0Wk00NjIuMiA4MC4xMDA0QzQ2Mi4yIDcxLjE2NzEgNDU5LjIgNjMuNTY3MSA0NTMuMiA1Ny4zMDA0QzQ0Ny4yIDUxLjAwMDQgNDM5LjkgNDcuOTAwNCA0MzEuMSA0Ny45MDA0QzQyMi4zIDQ3LjkwMDQgNDE0LjkgNTEuMDY3MSA0MDguOSA1Ny40MDA0TDQwOC4yIDU2LjcwMDRMNDA4LjMgNTYuODAwNEw0MDguOSA1Ny40MDA0QzQwMi45NjcgNjMuNzMzNyA0MDAgNzEuMzAwNCA0MDAgODAuMTAwNEM0MDAgODguODMzNyA0MDMgOTYuNDAwNCA0MDkgMTAyLjhDNDE1LjIgMTA5LjEgNDIyLjUgMTEyLjMgNDMxLjEgMTEyLjNDNDQwIDExMi4zIDQ0Ny40IDEwOS4yIDQ1My4zIDEwMi45QzQ1OS4yMzMgOTYuNTY3MSA0NjIuMiA4OC45NjcxIDQ2Mi4yIDgwLjEwMDRaTTU0NS44IDExNC4zTDU0NyAxMTUuOUg1NDEuMkw1NDAuOSAxMTUuNUw1MTYuNyA4NS4yMDA0SDQ5My4xVjExNS45SDQ4OC40VjQ0LjMwMDRINTE0LjZDNTIzLjIgNDQuMzAwNCA1MjkuOSA0NS45MDA0IDUzNC40IDQ5LjMwMDRDNTM5IDUyLjcwMDQgNTQxLjIgNTcuODAwNCA1NDEuMiA2NC40MDA0QzU0MS4yIDcwLjEwMDQgNTM5LjEgNzQuODAwNCA1MzQuOSA3OC40MDA0QzUzMS4yMzMgODEuNDY3MSA1MjYuODY2IDgzLjQzMzcgNTIxLjggODQuMzAwNEw1NDUuOCAxMTQuM1pNNTI1IDc5LjEwMDRDNTI4LjIgNzcuOTY3MSA1MzAuOTMzIDc2LjEwMDQgNTMzLjIgNzMuNTAwNEM1MzUuNDY3IDcwLjk2NzEgNTM2LjYgNjcuOTMzNyA1MzYuNiA2NC40MDA0QzUzNi42IDU5LjIwMDQgNTM0LjggNTUuMzAwNCA1MzEuMiA1Mi44MDA0QzUyNy43IDUwLjIwMDQgNTIyLjIgNDguODAwNCA1MTQuNiA0OC44MDA0SDQ5My4xVjgwLjcwMDRINTE0LjdDNTE4LjMgODAuNzAwNCA1MjEuNzMzIDgwLjE2NzEgNTI1IDc5LjEwMDRaTTM4MS43IDEwNC43TDM4Mi4zIDEwNS4zTDM4MS44IDEwNkwzODEgMTA1LjRMMzgxLjcgMTA0LjdaTTYyMC40IDU0LjEwMDRDNjI3LjEgNjEuMjAwNCA2MzAuNSA2OS45MDA0IDYzMC41IDgwLjEwMDRDNjMwLjUgOTAuNDAwNCA2MjcuMSA5OS4xMDA0IDYyMC4yIDEwNi4xQzYxMy40IDExMy4yIDYwNC45IDExNi44IDU5NC43IDExNi44QzU4NC41IDExNi44IDU3NS45IDExMy4yIDU2OS4xIDEwNi4xQzU2Mi4zNjcgOTguOTY3MSA1NTkgOTAuMzAwNCA1NTkgODAuMTAwNEM1NTkgNjkuOTAwNCA1NjIuNDMzIDYxLjI2NzEgNTY5LjMgNTQuMjAwNEM1NzYuMiA0Ny4wMDA0IDU4NC43IDQzLjQwMDQgNTk0LjcgNDMuNDAwNEM2MDUuMSA0My40MDA0IDYxMy42IDQ3LjAwMDQgNjIwLjQgNTQuMTAwNFpNNjI1LjggODAuMTAwNEM2MjUuOCA3MS4xNjcxIDYyMi44MzMgNjMuNTY3MSA2MTYuOSA1Ny4zMDA0QzYxMC45IDUxLjEwMDQgNjAzLjUgNDcuOTAwNCA1OTQuNyA0Ny45MDA0QzU4NS45IDQ3LjkwMDQgNTc4LjYgNTEuMTAwNCA1NzIuNiA1Ny40MDA0QzU2Ni42IDYzLjczMzcgNTYzLjYgNzEuMzAwNCA1NjMuNiA4MC4xMDA0QzU2My42IDg4LjgzMzcgNTY2LjYzMyA5Ni40MDA0IDU3Mi43IDEwMi44QzU3OC44IDEwOS4yIDU4Ni4xIDExMi4zIDU5NC43IDExMi4zQzYwMy43IDExMi4zIDYxMS4xIDEwOS4yIDYxNyAxMDIuOUM2MjIuODY3IDk2LjU2NzEgNjI1LjggODguOTY3MSA2MjUuOCA4MC4xMDA0WiIgZmlsbD0iIzMwMzQ3NiIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTQ1OC42IDE0Ny42QzQ2MCAxNDkuNCA0NjAuNyAxNTEuNSA0NjAuNyAxNTMuOUM0NjAuNyAxNTQuNTY3IDQ2MC42MzMgMTU1LjMzNCA0NjAuNSAxNTYuMlYxNTYuNUg0NDMuMkM0NDMuNCAxNTguNjM0IDQ0NC4yIDE2MC4zIDQ0NS42IDE2MS41QzQ0Ny4wNjYgMTYyLjc2NyA0NDkgMTYzLjQgNDUxLjQgMTYzLjRDNDUyLjUzMyAxNjMuNCA0NTMuNjY2IDE2My4xIDQ1NC44IDE2Mi41QzQ1NS45MzMgMTYxLjkgNDU2LjgzMyAxNjEuMSA0NTcuNSAxNjAuMUw0NTcuNyAxNTkuOEw0NTggMTYwTDQ1OS44IDE2MS42TDQ2MCAxNjEuOEw0NTkuOCAxNjJDNDU4Ljg2NiAxNjMuNDY3IDQ1Ny42MzMgMTY0LjYgNDU2LjEgMTY1LjRDNDU0LjU2NiAxNjYuMiA0NTIuOTMzIDE2Ni42IDQ1MS4yIDE2Ni42QzQ0Ny44IDE2Ni42IDQ0NS4wMzMgMTY1LjU2NyA0NDIuOSAxNjMuNUM0NDAuODMzIDE2MS4zNjcgNDM5LjggMTU4LjYzNCA0MzkuOCAxNTUuM0M0MzkuOCAxNTEuOTY3IDQ0MC44IDE0OS4yNjcgNDQyLjggMTQ3LjJDNDQ0LjggMTQ1LjA2NyA0NDcuNDMzIDE0NCA0NTAuNyAxNDRDNDUxLjMgMTQ0IDQ1Mi4wNjYgMTQ0LjEgNDUzIDE0NC4zQzQ1NS40IDE0NC43NjcgNDU3LjI2NiAxNDUuODY3IDQ1OC42IDE0Ny42Wk00NTcuMiAxNTMuNEM0NTcuMDY2IDE1MS40NjcgNDU2LjQzMyAxNDkuOTY3IDQ1NS4zIDE0OC45QzQ1NC4xNjYgMTQ3Ljc2NyA0NTIuNTY2IDE0Ny4yIDQ1MC41IDE0Ny4yQzQ0OC41IDE0Ny4yIDQ0Ni44MzMgMTQ3LjggNDQ1LjUgMTQ5QzQ0NC4yMzMgMTUwLjEzNCA0NDMuNDY2IDE1MS42IDQ0My4yIDE1My40SDQ1Ny4yWk00NzcgMTM2LjJWMTY2LjJINDczLjdWMTM2LjJINDc3Wk0zOTguOCAxNDYuNEM0MDAuNCAxNDcuOSA0MDEuMSAxNTAuMSA0MDEuMSAxNTIuOVYxNjYuMkgzOTcuOVYxNjMuNEMzOTcuMSAxNjQuMjY3IDM5Ni4xIDE2NC45NjcgMzk0LjkgMTY1LjVDMzkzLjQzMyAxNjYuMTY3IDM5MS45IDE2Ni41IDM5MC4zIDE2Ni41QzM4OC4xNjYgMTY2LjUgMzg2LjMgMTY1Ljk2NyAzODQuNyAxNjQuOUMzODMuMTY2IDE2My43IDM4Mi40IDE2Mi4wNjcgMzgyLjQgMTYwQzM4Mi40IDE1Ny43MzQgMzgzLjMgMTU2LjAzNCAzODUuMSAxNTQuOUMzODYuOSAxNTMuNzY3IDM4OS41IDE1My4yMzQgMzkyLjkgMTUzLjNDMzk0Ljc2NiAxNTMuMyAzOTYuNDMzIDE1My40NjcgMzk3LjkgMTUzLjhDMzk3LjgzMyAxNTEuNjY3IDM5Ny4zNjYgMTUwLjA2NyAzOTYuNSAxNDlDMzk1LjYgMTQ3LjkgMzk0LjEgMTQ3LjMgMzkxLjkgMTQ3LjNDMzg5Ljc2NiAxNDcuMyAzODcuNyAxNDguMSAzODUuNyAxNDkuN0wzODUuNCAxNDkuOUwzODUuMiAxNDkuNkwzODMuOCAxNDcuNkwzODQuMSAxNDcuNEwzODMuOSAxNDcuMUMzODQuOSAxNDYuMTY3IDM4Ni4xNjYgMTQ1LjQzNCAzODcuNyAxNDQuOUMzODkuMjMzIDE0NC4zNjcgMzkwLjczMyAxNDQuMSAzOTIuMiAxNDQuMUMzOTUgMTQ0LjEgMzk3LjMgMTQ0LjggMzk4LjggMTQ2LjRaTTQzMC45IDE0NC42TDQzMC43IDE0NS4xTDQyMS4yIDE2Nkw0MjEuMSAxNjYuMkg0MTguOUw0MTguOCAxNjYuMUw0MDguOSAxNDUuMUw0MDguNyAxNDQuNkg0MTIuNUw0MTIuNiAxNDQuOEw0MjAuMSAxNjFMNDI3LjMgMTQ0LjhMNDI3LjQgMTQ0LjZINDMwLjlaTTM3Mi40IDE0Ni4yTDM3Mi42IDE0Ni40TDM3Mi40IDE0Ni42TDM3MC42IDE0OC40TDM3MC4zIDE0OC42TDM3MC4xIDE0OC40QzM2OS41IDE0Ny43IDM2OC43IDE0Ny4zIDM2Ny42IDE0Ny4zQzM2Ni42IDE0Ny4zIDM2NS43MzMgMTQ3LjY2NyAzNjUgMTQ4LjRDMzY0LjI2NiAxNDkuMTM0IDM2My43NjYgMTUwLjAzNCAzNjMuNSAxNTEuMVYxNjYuMkgzNjAuMlYxNDQuNkgzNjMuNVYxNDUuOUMzNjMuOSAxNDUuNDM0IDM2NC4zNjYgMTQ1LjA2NyAzNjQuOSAxNDQuOEMzNjUuOSAxNDQuNCAzNjYuOSAxNDQuMTY3IDM2Ny45IDE0NC4xQzM2OS43NjYgMTQ0LjEgMzcxLjI2NiAxNDQuOCAzNzIuNCAxNDYuMlpNMzg0LjEgMTQ3LjRMMzgzLjggMTQ3LjZMMzgzLjcgMTQ3LjNMMzgzLjkgMTQ3LjFMMzg0LjEgMTQ3LjRaTTM5Ny44IDE1Ni45QzM5Ni42NjYgMTU2LjUgMzk1LjE2NiAxNTYuMyAzOTMuMyAxNTYuM0MzOTAuNyAxNTYuMyAzODguNzY2IDE1Ni42IDM4Ny41IDE1Ny4yQzM4Ni45IDE1Ny41MzQgMzg2LjQ2NiAxNTcuOSAzODYuMiAxNTguM0MzODUuOTMzIDE1OC43NjcgMzg1LjggMTU5LjI2NyAzODUuOCAxNTkuOEMzODUuOCAxNjEuMDY3IDM4Ni4zIDE2MiAzODcuMyAxNjIuNkMzODguMzY2IDE2My4yIDM4OS42IDE2My41IDM5MSAxNjMuNUMzOTIuNCAxNjMuNSAzOTMuNzMzIDE2My4wNjcgMzk1IDE2Mi4yTDM5NS4yIDE2Mi40VjE2Mi41TDM5NSAxNjIuMkMzOTYuMzMzIDE2MS4zMzQgMzk3LjI2NiAxNjAuMyAzOTcuOCAxNTkuMVYxNTYuOVpNMzQ4LjcgMTYzLjNMMzQ4LjkgMTYzLjVMMzQ4LjcgMTYzLjdDMzQ4LjEgMTY0LjU2NyAzNDcuMjY2IDE2NS4yNjcgMzQ2LjIgMTY1LjhDMzQ1LjA2NiAxNjYuMjY3IDM0My45NjYgMTY2LjUgMzQyLjkgMTY2LjVDMzQwLjYgMTY2LjUgMzM4LjggMTY1LjcgMzM3LjggMTY0LjFDMzM2LjggMTYyLjU2NyAzMzYuMyAxNjAuNTY3IDMzNi4zIDE1OC4xVjE0Ny44SDMzMi4xVjE0NC42SDMzNi4zVjEzOS45SDMzOS42VjE0NC42SDM0N1YxNDcuOEgzMzkuNlYxNTcuNUMzMzkuNiAxNTguMzY3IDMzOS42MzMgMTU5LjEgMzM5LjcgMTU5LjdDMzM5Ljc2NiAxNjAuMyAzMzkuOTMzIDE2MC45MzQgMzQwLjIgMTYxLjZDMzQwLjQ2NiAxNjIuMiAzNDAuODMzIDE2Mi42MzQgMzQxLjMgMTYyLjlDMzQxLjgzMyAxNjMuMjM0IDM0Mi41MzMgMTYzLjQgMzQzLjQgMTYzLjRDMzQ0LjUgMTYzLjQgMzQ1LjYgMTYyLjggMzQ2LjYgMTYxLjdMMzQ2LjggMTYxLjRMMzQ3LjEgMTYxLjdMMzQ4LjcgMTYzLjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTE5LjYgMjcuM0MxMTkuNiAxMi42IDEzOCAxLjIgMTM4LjggMC44MDAwMDNMMTQwIDBMMTQxLjIgMC44MDAwMDNDMTQyIDEuMiAxNjAuNCAxMi42IDE2MC40IDI3LjNDMTYwLjQgNDIuMSAxNDIgNTMuNSAxNDEuMiA1My45TDE0MCA1NC43TDEzOC44IDUzLjlDMTM4IDUzLjUgMTE5LjYgNDIuMSAxMTkuNiAyNy4zWk0xMjQuNCAyNy4zQzEyNC40IDM3LjUgMTM2LjEgNDYuNCAxNDAgNDkuMUMxNDMuOSA0Ni40IDE1NS42IDM3LjQgMTU1LjYgMjcuM0MxNTUuNiAxNy4yIDE0My45IDguMzAwMDEgMTQwIDUuNjAwMDFDMTM2LjEgOC4zMDAwMSAxMjQuNCAxNy4yIDEyNC40IDI3LjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGQ9Ik0xNDYuOCAxMDkuMkMxNjguMyA3OC4yOTk2IDE5MC42IDQ2LjI5OTYgMjE3LjMgNDYuMjk5NkMyMTcuMyA0My41OTk2IDIxNSA0MS40OTk2IDIxMi4zIDQxLjg5OTZDMTg1LjQgNDUuMzk5NiAxNjMuOCA3Ni4zOTk2IDE0Mi45IDEwNi41QzE0MS45IDEwNy45IDE0MC45MzMgMTA5LjI2NiAxNDAgMTEwLjZDMTM5LjA2NyAxMDkuMjY2IDEzOC4xIDEwNy45IDEzNy4xIDEwNi41QzExNi4yIDc2LjQ5OTYgOTQuNiA0NS4zOTk2IDY3LjcgNDEuODk5NkM2NS4xIDQxLjQ5OTYgNjIuNyA0My41OTk2IDYyLjcgNDYuMjk5NkM4OS4zOTk5IDQ2LjI5OTYgMTExLjcgNzguMjk5NiAxMzMuMiAxMDkuMkMxMzQuNTMzIDExMS4wNjYgMTM1LjgzMyAxMTIuOTMzIDEzNy4xIDExNC44QzEyOC44IDEyNi41IDEyMC44IDEzNy40IDExMi41IDE0NkMxMDYuMSAxMzguMyA5OS45OTk4IDEyOC44IDkzLjc5OTggMTE5Qzg1LjI5OTggMTA1LjcgNzYuNTk5OSA5MS45OTk2IDY2LjM5OTkgODEuNDk5NkM1NS45OTk5IDcwLjg5OTYgNDUuNSA2NS4wOTk2IDM0LjIgNjMuNjk5NkMzMS41IDYzLjM5OTYgMjkuMDk5OSA2NS40OTk2IDI5LjA5OTkgNjguMTk5NkM1NS43OTk5IDY4LjE5OTYgNzMuMDk5OCA5NS4yOTk2IDg5Ljc5OTggMTIxLjVDOTYuMTk5OCAxMzEuNiAxMDIuNCAxNDEuNCAxMDkuMSAxNDkuNEM5OS4zOTk5IDE1OC42IDkwLjQ5OTkgMTYzLjEgODEuODk5OSAxNjMuMUM2Ni41OTk5IDE2My4xIDU3LjE5OTggMTQ2LjkgNDcuMjk5OCAxMjkuN0M0MS41OTk4IDExOS44IDM1LjggMTA5LjcgMjguNSAxMDEuOUMyMS4zIDk0LjM5OTYgMTMuNTk5OSA5MC4wOTk2IDUuMDk5ODUgODguODk5NkMzLjc5OTg1IDg4Ljc5OTYgMi40OTk4NSA4OS4xOTk2IDEuNTk5ODUgODkuOTk5NkMwLjU5OTg1NCA5MC43OTk2IDAgOTEuOTk5NiAwIDkzLjI5OTZDMjAuOSA5My4yOTk2IDMyLjIgMTEzIDQzLjIgMTMyQzQ4LjQgMTQxLjIgNTMuMzk5OSAxNDkuOCA1OS4zOTk5IDE1Ni40QzY2LjI5OTkgMTY0LjIgNzMuNjk5OSAxNjcuOSA4MS44OTk5IDE2Ny45Qzg3Ljc5OTkgMTY3LjkgOTMuNyAxNjYuMSA5OS43IDE2Mi43QzEwNC45IDE1OS42IDExMC4zIDE1NS4zIDExNiAxNDkuM0MxMjYuNCAxMzguNSAxMzYuMyAxMjQuMyAxNDYuOCAxMDkuMloiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI1MC44IDY4LjIwMDVDMjUwLjggNjUuNTAwNSAyNDguNSA2My40MDA1IDI0NS44IDYzLjcwMDVDMjM0LjUgNjUuMTAwNSAyMjQgNzAuOTAwNCAyMTMuNiA4MS41MDA0QzIwMy40IDkyLjAwMDQgMTk0LjcgMTA1LjcgMTg2LjIgMTE5QzE4MCAxMjguOCAxNzMuOSAxMzguMyAxNjcuNSAxNDZDMTYwLjMgMTM4LjYgMTUzLjQgMTI5LjUgMTQ2LjMgMTE5LjZDMTQ1LjMgMTIxIDE0NC4zMzMgMTIyLjMzNCAxNDMuNCAxMjMuNkMxNTAuMiAxMzMuMiAxNTcgMTQyIDE2NC4xIDE0OS4zQzE2NC4xNjcgMTQ5LjQzNCAxNjQuMjY3IDE0OS41NjcgMTY0LjQgMTQ5LjdDMTU2LjkgMTU3LjggMTQ5IDE2My4xIDE0MCAxNjMuMUMxMzIuNSAxNjMuMSAxMjUuNyAxNTkuNCAxMTkuMyAxNTMuM0MxMTguMDMzIDE1NC42MzQgMTE2LjkzMyAxNTUuOCAxMTYgMTU2LjhDMTIzLjIgMTYzLjYgMTMxIDE2Ny45IDE0MCAxNjcuOUMxNjAuNyAxNjcuOSAxNzUuMSAxNDUuNCAxOTAuMiAxMjEuNUMyMDYuOSA5NS4zMDA0IDIyNC4yIDY4LjIwMDUgMjUwLjggNjguMjAwNVoiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI3NC45IDg4Ljg5OTZDMjY2LjMgOTAuMDk5NiAyNTguNiA5NC4zOTk2IDI1MS41IDEwMS45QzI0NC4yIDEwOS43IDIzOC4zIDExOS45IDIzMi43IDEyOS43QzIyMi44IDE0Ni45IDIxMy40IDE2My4xIDE5OC4xIDE2My4xQzE5MSAxNjMuMSAxODMuNyAxNjAgMTc1LjkgMTUzLjhMMTcyLjkgMTU3LjVDMTc1LjQgMTU5LjUgMTc3LjkgMTYxLjMgMTgwLjMgMTYyLjdDMTg2LjMgMTY2LjEgMTkyLjIgMTY3LjkgMTk4LjEgMTY3LjlDMjA2LjMgMTY3LjkgMjEzLjcgMTY0LjEgMjIwLjYgMTU2LjRDMjI2LjYgMTQ5LjggMjMxLjYgMTQxLjIgMjM2LjggMTMyQzI0Ny44IDExMyAyNTkuMSA5My4yOTk2IDI3OS45IDkzLjI5OTZDMjc5LjkgOTAuNTk5NiAyNzcuNSA4OC40OTk2IDI3NC45IDg4Ljg5OTZaIiBmaWxsPSIjMzAzNDc2Ii8+Cjwvc3ZnPgo=" style="height:28px;width:auto;">' +
-      '</div>' +
-      '<div class="summary">' +
-        '<div class="sum-item"><div class="sum-num">' + all.length + '</div><div class="sum-label">всего</div></div>' +
-        '<div class="sum-item"><div class="sum-num" style="color:#2e7d52;">' + confirmed.length + '</div><div class="sum-label">подтверждено</div></div>' +
-        '<div class="sum-item"><div class="sum-num" style="color:#b8620a;">' + pending.length + '</div><div class="sum-label">ожидают</div></div>' +
-        '<div class="sum-item"><div class="sum-num">' + sellers.length + '</div><div class="sum-label">селлеров</div></div>' +
-        '<div class="sum-item"><div class="sum-num">' + buyers.length + '</div><div class="sum-label">байеров</div></div>' +
-      '</div>' +
-      '<table><thead><tr><th style="padding:8px 12px;background:#1a1d4a;color:#B2906A;font-size:11px;">Селлер</th>' + buyerHeaders + '</tr></thead>' +
-      '<tbody>' + matrixRows + '</tbody></table>' +
-      '<div style="margin-top:16px;font-size:10px;color:#aaa;text-align:center;">Corona Travel · Travel Synergy Workshop · ' + today + '</div>' +
-      '</body></html>'
-    );
-    win.document.close();
-    setTimeout(function(){ win.print(); }, 400);
-  });
-}
-
-
-
-// ══════════════════════════════════════════════
-// BUYER PROFILE CARD (for sellers to view)
-// ══════════════════════════════════════════════
-async function showBuyerCard(buyerId) {
-  const buyer = allBuyers.find(b => b.id === buyerId);
-  if (!buyer) return;
-
-  // Load all people from this company
-  const { data: people } = await sb.from('users')
-    .select('id,name,notes,telegram_id').eq('company', buyer.company).eq('event_id', EVENT_ID)
-    .eq('role','buyer').order('name');
-
-  const logoHtml = buyer.logo_url
-    ? '<img src="'+buyer.logo_url+'" style="height:40px;width:auto;object-fit:contain;max-width:120px;">'
-    : '';
-
-  const dirs = (buyer.directions&&buyer.directions.length)
-    ? buyer.directions.map(d=>'<span class="tag" style="font-size:11px;padding:2px 10px;">'+escHtml(d)+'</span>').join('')
-    : '';
-
-  const contactsHtml = (people||[]).map(p => {
-    const ini = p.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(178,144,106,0.08);">' +
-      '<div style="width:32px;height:32px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;">'+ini+'</div>' +
-      '<div style="flex:1;">' +
-        '<div style="font-size:13px;font-weight:500;">'+escHtml(p.name)+'</div>' +
-        (p.notes ? '<div style="font-size:11px;color:var(--text-dim);">'+escHtml(p.notes)+'</div>' : '') +
-        (p.telegram_id ? '<div style="font-size:11px;color:var(--gold-lt);">'+escHtml(p.telegram_id)+'</div>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
-
-  const existing = myMeetings.find(mt =>
-    (mt.seller_id===currentUser.id||(mt.seller&&mt.seller.id===currentUser.id)) &&
-    (mt.buyer_id===buyer.id||(mt.buyer&&mt.buyer.id===buyer.id)));
-
-  const div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.style.display = 'flex';
-  div.innerHTML =
-    '<div class="modal" style="width:460px;max-height:88vh;overflow-y:auto;">' +
-      // Header — company first
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
-        '<div>' +
-          '<div style="font-size:19px;font-weight:700;margin-bottom:4px;">'+escHtml(buyer.company)+'</div>' +
-          (buyer.audience ? '<div style="font-size:12px;color:var(--gold-lt);">'+escHtml(buyer.audience)+'</div>' : '') +
-        '</div>' +
-        (logoHtml || '') +
-      '</div>' +
-      // Directions
-      (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">'+dirs+'</div>' : '') +
-      // Info block
-      '<div class="profile-block">' +
-        (buyer.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">'+escHtml(buyer.services)+'</span></div>' : '') +
-        (buyer.utp      ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">'+escHtml(buyer.utp)+'</span></div>' : '') +
-        (buyer.notes    ? '<div class="profile-row"><span class="profile-key">О компании</span><span class="profile-val">'+escHtml(buyer.notes)+'</span></div>' : '') +
-        (!buyer.services && !buyer.utp && !buyer.notes && !buyer.audience
-          ? '<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:13px;">Профиль ещё не заполнен</div>' : '') +
-      '</div>' +
-      // Contacts
-      '<div style="margin-top:14px;">' +
-        '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Представители</div>' +
-        contactsHtml +
-      '</div>' +
-      '<div class="modal-actions" style="margin-top:16px;">' +
-        '<button class="btn btn-outline btn-sm" onclick="this.closest(&quot;.modal-overlay&quot;).remove()">Закрыть</button>' +
-        (currentUser.role==='seller' && !existing
-          ? '<button class="btn btn-gold btn-sm" onclick="this.closest(&quot;.modal-overlay&quot;).remove();openPropose(&quot;'+buyerId+'&quot;)">Предложить встречу</button>'
-          : (existing ? '<span style="font-size:12px;color:'+(existing.status==='confirmed'?'#4ade80':'var(--gold-lt)')+';">'+(existing.status==='confirmed'?'✓ Встреча подтверждена':'⏳ Запрос отправлен')+'</span>' : '')) +
-      '</div>' +
-    '</div>';
-
-  div.addEventListener('click', e=>{ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-// ══════════════════════════════════════════════
-// ADMIN: PDF for individual participant
-// ══════════════════════════════════════════════
-async function exportParticipantPDF(userId) {
-  const { data: u } = await sb.from('users').select('*').eq('id', userId).single();
-  if (!u) return;
-
-  const { data: mtgs } = await sb.from('meetings')
-    .select('*, slot:slot_id(*), seller:seller_id(id,name,company), buyer:buyer_id(id,name,company)')
-    .eq('event_id', EVENT_ID)
-    .eq('status', 'confirmed')
-    .or('seller_id.eq.'+userId+',buyer_id.eq.'+userId);
-
-  const sorted = (mtgs||[]).sort(function(a,b){ return (a.slot&&a.slot.sort_order||0)-(b.slot&&b.slot.sort_order||0); });
-  const roleRu = u.role === 'seller' ? 'Селлер' : 'Байер';
-  const today = new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
-
-
-  const rows = sorted.map(function(m) {
-    const other = u.role === 'seller' ? m.buyer : m.seller;
-    return '<tr><td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;font-weight:700;font-size:15px;color:#303476;">'+
-      (m.slot&&m.slot.time_label||'—')+'</td>'+
-      '<td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;">'+(other&&other.name||'—')+'</td>'+
-      '<td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;color:#666;">'+(other&&other.company||'—')+'</td></tr>';
-  }).join('');
-
-  const win = window.open('','_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписание · '+u.name+'</title>'+
-    '<style>body{font-family:Arial,sans-serif;color:#1a1d4a;margin:0;padding:32px;}'+
-    '.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}'+
-    'h1{font-size:22px;margin:0 0 4px;}'+
-    '.meta{font-size:12px;color:#888;}'+
-    '.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;margin-left:6px;vertical-align:middle;}'+
-    '.seller-badge{background:#B88F64;color:#fff;} .buyer-badge{background:#2e7d52;color:#fff;}'+
-    '.summary{display:flex;gap:28px;background:#f5f3ef;border-radius:8px;padding:14px 18px;margin-bottom:18px;}'+
-    '.sum-item{text-align:center;} .sum-num{font-size:22px;font-weight:700;color:#303476;} .sum-label{font-size:10px;color:#888;}'+
-    'table{width:100%;border-collapse:collapse;border:1px solid #e0d5c5;border-radius:8px;overflow:hidden;}'+
-    'th{text-align:left;padding:10px 14px;background:#1a1d4a;color:#B88F64;font-size:11px;letter-spacing:.05em;}'+
-    'tr:last-child td{border-bottom:none;}'+
-    '.footer{margin-top:20px;font-size:10px;color:#bbb;text-align:center;}'+
-    '@media print{body{padding:16px;}}'+
-    '</style></head><body>'+
-    '<div class="header">'+
-      '<div><h1>'+u.name+'<span class="badge '+(u.role==='seller'?'seller':'buyer')+'-badge">'+roleRu+'</span></h1>'+
-      '<div class="meta">'+u.company+' · Travel Synergy Workshop · '+today+'</div></div>'+
-      '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzk1IiBoZWlnaHQ9IjE2OCIgdmlld0JveD0iMCAwIDc5NSAxNjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMzgxLjEgMTA1LjNMMzgxLjkgMTA1LjlDMzc4Ljk2NyAxMDkuNSAzNzUuMjMzIDExMi4yMzQgMzcwLjcgMTE0LjFDMzY2LjIzMyAxMTUuOSAzNjEuNSAxMTYuOCAzNTYuNSAxMTYuOEMzNDUuNCAxMTYuOCAzMzYuNCAxMTMuNCAzMjkuNiAxMDYuN0MzMjIuOCA5OS45MDA0IDMxOS41IDkxLjAwMDQgMzE5LjUgODAuMTAwNEMzMTkuNSA2OS40MDA0IDMyMi43IDYwLjYwMDQgMzI5LjMgNTMuODAwNEMzMzUuOSA0Ni45MDA0IDM0NC40IDQzLjQwMDQgMzU0LjkgNDMuNDAwNEMzNTkuOSA0My40MDA0IDM2NC43MzMgNDQuMzAwNCAzNjkuNCA0Ni4xMDA0QzM3NC4xMzMgNDcuODMzNyAzNzguMDMzIDUwLjUwMDQgMzgxLjEgNTQuMTAwNEwzODEuNiA1NC43MDA0TDM4MS4xIDU1LjQwMDRMMzc5LjcgNTcuMTAwNEwzNzkgNTcuODAwNEwzNzguMyA1Ny4yMDA0QzM3NC4zNjYgNTMuODAwNCAzNzAuNjMzIDUxLjQwMDQgMzY3LjEgNTAuMDAwNEwzNjcuNSA0OS4xMDA0TDM2Ny40IDQ5LjIwMDRMMzY3LjEgNTAuMDAwNEMzNjMuNyA0OC42MDA0IDM1OS41MzMgNDcuOTAwNCAzNTQuNiA0Ny45MDA0QzM0NSA0Ny45MDA0IDMzNy43IDUwLjkwMDQgMzMyLjIgNTYuOTAwNEMzMjYuOSA2Mi45MDA0IDMyNC4xIDcwLjYwMDQgMzI0LjEgODAuMTAwNEMzMjQuMSA5MC4xMDA0IDMyNy4xIDk3LjkwMDQgMzMzIDEwMy42QzMzOC45IDEwOS40IDM0Ni43IDExMi4zIDM1Ni41IDExMi4zQzM2NS42IDExMi4zIDM3MyAxMDkuMiAzNzguOSAxMDMuMUwzNzkuNiAxMDIuM0wzODAuMyAxMDMuMUwzODEuOCAxMDQuNkwzODEuMSAxMDUuM1pNNzEwLjQgNDQuMzAwNFYxMTUuOUg3MDYuM0w3MDYgMTE1LjVMNjU2LjkgNTIuNDAwNFYxMTUuOUg2NTIuMlY0NC4zMDA0SDY1Ni40TDY1Ni43IDQ0LjcwMDRMNzA1LjggMTA3LjhWNDQuMzAwNEg3MTAuNFpNNzk0LjggMTE1LjlINzg5LjhMNzg5LjUgMTE1LjNMNzc5LjggOTMuMjAwNEg3NDIuNkw3MzMgMTE1LjNMNzMyLjcgMTE1LjlINzI3LjhMNzI4LjQgMTE0LjVMNzU4LjkgNDQuNTAwNEw3NTkuMSA0My45MDA0SDc2My4xTDc2My40IDQ0LjUwMDRMNzk0LjIgMTE0LjVMNzk0LjggMTE1LjlaTTc3Ny45IDg4LjcwMDRMNzYxLjEgNTAuNDAwNEw3NDQuNiA4OC43MDA0SDc3Ny45Wk00NjYuOSA4MC4xMDA0QzQ2Ni45IDkwLjM2NzEgNDYzLjQzMyA5OS4wMzM3IDQ1Ni41IDEwNi4xQzQ0OS43IDExMy4yIDQ0MS4yIDExNi44IDQzMS4xIDExNi44QzQyMC44IDExNi44IDQxMi4yIDExMy4yIDQwNS40IDEwNi4xTDQwNi4xIDEwNS41VjEwNS40TDQwNS40IDEwNi4xQzM5OC42NjcgOTguOTY3MSAzOTUuMyA5MC4zMDA0IDM5NS4zIDgwLjEwMDRDMzk1LjMgNjkuOTAwNCAzOTguNzMzIDYxLjI2NzEgNDA1LjYgNTQuMjAwNEM0MTIuNSA0Ny4wMDA0IDQyMSA0My40MDA0IDQzMS4xIDQzLjQwMDRDNDQxLjQgNDMuNDAwNCA0NTAgNDcuMDAwNCA0NTYuNyA1NC4xMDA0QzQ2My41IDYxLjIwMDQgNDY2LjkgNjkuOTAwNCA0NjYuOSA4MC4xMDA0Wk00NjIuMiA4MC4xMDA0QzQ2Mi4yIDcxLjE2NzEgNDU5LjIgNjMuNTY3MSA0NTMuMiA1Ny4zMDA0QzQ0Ny4yIDUxLjAwMDQgNDM5LjkgNDcuOTAwNCA0MzEuMSA0Ny45MDA0QzQyMi4zIDQ3LjkwMDQgNDE0LjkgNTEuMDY3MSA0MDguOSA1Ny40MDA0TDQwOC4yIDU2LjcwMDRMNDA4LjMgNTYuODAwNEw0MDguOSA1Ny40MDA0QzQwMi45NjcgNjMuNzMzNyA0MDAgNzEuMzAwNCA0MDAgODAuMTAwNEM0MDAgODguODMzNyA0MDMgOTYuNDAwNCA0MDkgMTAyLjhDNDE1LjIgMTA5LjEgNDIyLjUgMTEyLjMgNDMxLjEgMTEyLjNDNDQwIDExMi4zIDQ0Ny40IDEwOS4yIDQ1My4zIDEwMi45QzQ1OS4yMzMgOTYuNTY3MSA0NjIuMiA4OC45NjcxIDQ2Mi4yIDgwLjEwMDRaTTU0NS44IDExNC4zTDU0NyAxMTUuOUg1NDEuMkw1NDAuOSAxMTUuNUw1MTYuNyA4NS4yMDA0SDQ5My4xVjExNS45SDQ4OC40VjQ0LjMwMDRINTE0LjZDNTIzLjIgNDQuMzAwNCA1MjkuOSA0NS45MDA0IDUzNC40IDQ5LjMwMDRDNTM5IDUyLjcwMDQgNTQxLjIgNTcuODAwNCA1NDEuMiA2NC40MDA0QzU0MS4yIDcwLjEwMDQgNTM5LjEgNzQuODAwNCA1MzQuOSA3OC40MDA0QzUzMS4yMzMgODEuNDY3MSA1MjYuODY2IDgzLjQzMzcgNTIxLjggODQuMzAwNEw1NDUuOCAxMTQuM1pNNTI1IDc5LjEwMDRDNTI4LjIgNzcuOTY3MSA1MzAuOTMzIDc2LjEwMDQgNTMzLjIgNzMuNTAwNEM1MzUuNDY3IDcwLjk2NzEgNTM2LjYgNjcuOTMzNyA1MzYuNiA2NC40MDA0QzUzNi42IDU5LjIwMDQgNTM0LjggNTUuMzAwNCA1MzEuMiA1Mi44MDA0QzUyNy43IDUwLjIwMDQgNTIyLjIgNDguODAwNCA1MTQuNiA0OC44MDA0SDQ5My4xVjgwLjcwMDRINTE0LjdDNTE4LjMgODAuNzAwNCA1MjEuNzMzIDgwLjE2NzEgNTI1IDc5LjEwMDRaTTM4MS43IDEwNC43TDM4Mi4zIDEwNS4zTDM4MS44IDEwNkwzODEgMTA1LjRMMzgxLjcgMTA0LjdaTTYyMC40IDU0LjEwMDRDNjI3LjEgNjEuMjAwNCA2MzAuNSA2OS45MDA0IDYzMC41IDgwLjEwMDRDNjMwLjUgOTAuNDAwNCA2MjcuMSA5OS4xMDA0IDYyMC4yIDEwNi4xQzYxMy40IDExMy4yIDYwNC45IDExNi44IDU5NC43IDExNi44QzU4NC41IDExNi44IDU3NS45IDExMy4yIDU2OS4xIDEwNi4xQzU2Mi4zNjcgOTguOTY3MSA1NTkgOTAuMzAwNCA1NTkgODAuMTAwNEM1NTkgNjkuOTAwNCA1NjIuNDMzIDYxLjI2NzEgNTY5LjMgNTQuMjAwNEM1NzYuMiA0Ny4wMDA0IDU4NC43IDQzLjQwMDQgNTk0LjcgNDMuNDAwNEM2MDUuMSA0My40MDA0IDYxMy42IDQ3LjAwMDQgNjIwLjQgNTQuMTAwNFpNNjI1LjggODAuMTAwNEM2MjUuOCA3MS4xNjcxIDYyMi44MzMgNjMuNTY3MSA2MTYuOSA1Ny4zMDA0QzYxMC45IDUxLjEwMDQgNjAzLjUgNDcuOTAwNCA1OTQuNyA0Ny45MDA0QzU4NS45IDQ3LjkwMDQgNTc4LjYgNTEuMTAwNCA1NzIuNiA1Ny40MDA0QzU2Ni42IDYzLjczMzcgNTYzLjYgNzEuMzAwNCA1NjMuNiA4MC4xMDA0QzU2My42IDg4LjgzMzcgNTY2LjYzMyA5Ni40MDA0IDU3Mi43IDEwMi44QzU3OC44IDEwOS4yIDU4Ni4xIDExMi4zIDU5NC43IDExMi4zQzYwMy43IDExMi4zIDYxMS4xIDEwOS4yIDYxNyAxMDIuOUM2MjIuODY3IDk2LjU2NzEgNjI1LjggODguOTY3MSA2MjUuOCA4MC4xMDA0WiIgZmlsbD0iIzMwMzQ3NiIvPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTQ1OC42IDE0Ny42QzQ2MCAxNDkuNCA0NjAuNyAxNTEuNSA0NjAuNyAxNTMuOUM0NjAuNyAxNTQuNTY3IDQ2MC42MzMgMTU1LjMzNCA0NjAuNSAxNTYuMlYxNTYuNUg0NDMuMkM0NDMuNCAxNTguNjM0IDQ0NC4yIDE2MC4zIDQ0NS42IDE2MS41QzQ0Ny4wNjYgMTYyLjc2NyA0NDkgMTYzLjQgNDUxLjQgMTYzLjRDNDUyLjUzMyAxNjMuNCA0NTMuNjY2IDE2My4xIDQ1NC44IDE2Mi41QzQ1NS45MzMgMTYxLjkgNDU2LjgzMyAxNjEuMSA0NTcuNSAxNjAuMUw0NTcuNyAxNTkuOEw0NTggMTYwTDQ1OS44IDE2MS42TDQ2MCAxNjEuOEw0NTkuOCAxNjJDNDU4Ljg2NiAxNjMuNDY3IDQ1Ny42MzMgMTY0LjYgNDU2LjEgMTY1LjRDNDU0LjU2NiAxNjYuMiA0NTIuOTMzIDE2Ni42IDQ1MS4yIDE2Ni42QzQ0Ny44IDE2Ni42IDQ0NS4wMzMgMTY1LjU2NyA0NDIuOSAxNjMuNUM0NDAuODMzIDE2MS4zNjcgNDM5LjggMTU4LjYzNCA0MzkuOCAxNTUuM0M0MzkuOCAxNTEuOTY3IDQ0MC44IDE0OS4yNjcgNDQyLjggMTQ3LjJDNDQ0LjggMTQ1LjA2NyA0NDcuNDMzIDE0NCA0NTAuNyAxNDRDNDUxLjMgMTQ0IDQ1Mi4wNjYgMTQ0LjEgNDUzIDE0NC4zQzQ1NS40IDE0NC43NjcgNDU3LjI2NiAxNDUuODY3IDQ1OC42IDE0Ny42Wk00NTcuMiAxNTMuNEM0NTcuMDY2IDE1MS40NjcgNDU2LjQzMyAxNDkuOTY3IDQ1NS4zIDE0OC45QzQ1NC4xNjYgMTQ3Ljc2NyA0NTIuNTY2IDE0Ny4yIDQ1MC41IDE0Ny4yQzQ0OC41IDE0Ny4yIDQ0Ni44MzMgMTQ3LjggNDQ1LjUgMTQ5QzQ0NC4yMzMgMTUwLjEzNCA0NDMuNDY2IDE1MS42IDQ0My4yIDE1My40SDQ1Ny4yWk00NzcgMTM2LjJWMTY2LjJINDczLjdWMTM2LjJINDc3Wk0zOTguOCAxNDYuNEM0MDAuNCAxNDcuOSA0MDEuMSAxNTAuMSA0MDEuMSAxNTIuOVYxNjYuMkgzOTcuOVYxNjMuNEMzOTcuMSAxNjQuMjY3IDM5Ni4xIDE2NC45NjcgMzk0LjkgMTY1LjVDMzkzLjQzMyAxNjYuMTY3IDM5MS45IDE2Ni41IDM5MC4zIDE2Ni41QzM4OC4xNjYgMTY2LjUgMzg2LjMgMTY1Ljk2NyAzODQuNyAxNjQuOUMzODMuMTY2IDE2My43IDM4Mi40IDE2Mi4wNjcgMzgyLjQgMTYwQzM4Mi40IDE1Ny43MzQgMzgzLjMgMTU2LjAzNCAzODUuMSAxNTQuOUMzODYuOSAxNTMuNzY3IDM4OS41IDE1My4yMzQgMzkyLjkgMTUzLjNDMzk0Ljc2NiAxNTMuMyAzOTYuNDMzIDE1My40NjcgMzk3LjkgMTUzLjhDMzk3LjgzMyAxNTEuNjY3IDM5Ny4zNjYgMTUwLjA2NyAzOTYuNSAxNDlDMzk1LjYgMTQ3LjkgMzk0LjEgMTQ3LjMgMzkxLjkgMTQ3LjNDMzg5Ljc2NiAxNDcuMyAzODcuNyAxNDguMSAzODUuNyAxNDkuN0wzODUuNCAxNDkuOUwzODUuMiAxNDkuNkwzODMuOCAxNDcuNkwzODQuMSAxNDcuNEwzODMuOSAxNDcuMUMzODQuOSAxNDYuMTY3IDM4Ni4xNjYgMTQ1LjQzNCAzODcuNyAxNDQuOUMzODkuMjMzIDE0NC4zNjcgMzkwLjczMyAxNDQuMSAzOTIuMiAxNDQuMUMzOTUgMTQ0LjEgMzk3LjMgMTQ0LjggMzk4LjggMTQ2LjRaTTQzMC45IDE0NC42TDQzMC43IDE0NS4xTDQyMS4yIDE2Nkw0MjEuMSAxNjYuMkg0MTguOUw0MTguOCAxNjYuMUw0MDguOSAxNDUuMUw0MDguNyAxNDQuNkg0MTIuNUw0MTIuNiAxNDQuOEw0MjAuMSAxNjFMNDI3LjMgMTQ0LjhMNDI3LjQgMTQ0LjZINDMwLjlaTTM3Mi40IDE0Ni4yTDM3Mi42IDE0Ni40TDM3Mi40IDE0Ni42TDM3MC42IDE0OC40TDM3MC4zIDE0OC42TDM3MC4xIDE0OC40QzM2OS41IDE0Ny43IDM2OC43IDE0Ny4zIDM2Ny42IDE0Ny4zQzM2Ni42IDE0Ny4zIDM2NS43MzMgMTQ3LjY2NyAzNjUgMTQ4LjRDMzY0LjI2NiAxNDkuMTM0IDM2My43NjYgMTUwLjAzNCAzNjMuNSAxNTEuMVYxNjYuMkgzNjAuMlYxNDQuNkgzNjMuNVYxNDUuOUMzNjMuOSAxNDUuNDM0IDM2NC4zNjYgMTQ1LjA2NyAzNjQuOSAxNDQuOEMzNjUuOSAxNDQuNCAzNjYuOSAxNDQuMTY3IDM2Ny45IDE0NC4xQzM2OS43NjYgMTQ0LjEgMzcxLjI2NiAxNDQuOCAzNzIuNCAxNDYuMlpNMzg0LjEgMTQ3LjRMMzgzLjggMTQ3LjZMMzgzLjcgMTQ3LjNMMzgzLjkgMTQ3LjFMMzg0LjEgMTQ3LjRaTTM5Ny44IDE1Ni45QzM5Ni42NjYgMTU2LjUgMzk1LjE2NiAxNTYuMyAzOTMuMyAxNTYuM0MzOTAuNyAxNTYuMyAzODguNzY2IDE1Ni42IDM4Ny41IDE1Ny4yQzM4Ni45IDE1Ny41MzQgMzg2LjQ2NiAxNTcuOSAzODYuMiAxNTguM0MzODUuOTMzIDE1OC43NjcgMzg1LjggMTU5LjI2NyAzODUuOCAxNTkuOEMzODUuOCAxNjEuMDY3IDM4Ni4zIDE2MiAzODcuMyAxNjIuNkMzODguMzY2IDE2My4yIDM4OS42IDE2My41IDM5MSAxNjMuNUMzOTIuNCAxNjMuNSAzOTMuNzMzIDE2My4wNjcgMzk1IDE2Mi4yTDM5NS4yIDE2Mi40VjE2Mi41TDM5NSAxNjIuMkMzOTYuMzMzIDE2MS4zMzQgMzk3LjI2NiAxNjAuMyAzOTcuOCAxNTkuMVYxNTYuOVpNMzQ4LjcgMTYzLjNMMzQ4LjkgMTYzLjVMMzQ4LjcgMTYzLjdDMzQ4LjEgMTY0LjU2NyAzNDcuMjY2IDE2NS4yNjcgMzQ2LjIgMTY1LjhDMzQ1LjA2NiAxNjYuMjY3IDM0My45NjYgMTY2LjUgMzQyLjkgMTY2LjVDMzQwLjYgMTY2LjUgMzM4LjggMTY1LjcgMzM3LjggMTY0LjFDMzM2LjggMTYyLjU2NyAzMzYuMyAxNjAuNTY3IDMzNi4zIDE1OC4xVjE0Ny44SDMzMi4xVjE0NC42SDMzNi4zVjEzOS45SDMzOS42VjE0NC42SDM0N1YxNDcuOEgzMzkuNlYxNTcuNUMzMzkuNiAxNTguMzY3IDMzOS42MzMgMTU5LjEgMzM5LjcgMTU5LjdDMzM5Ljc2NiAxNjAuMyAzMzkuOTMzIDE2MC45MzQgMzQwLjIgMTYxLjZDMzQwLjQ2NiAxNjIuMiAzNDAuODMzIDE2Mi42MzQgMzQxLjMgMTYyLjlDMzQxLjgzMyAxNjMuMjM0IDM0Mi41MzMgMTYzLjQgMzQzLjQgMTYzLjRDMzQ0LjUgMTYzLjQgMzQ1LjYgMTYyLjggMzQ2LjYgMTYxLjdMMzQ2LjggMTYxLjRMMzQ3LjEgMTYxLjdMMzQ4LjcgMTYzLjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTE5LjYgMjcuM0MxMTkuNiAxMi42IDEzOCAxLjIgMTM4LjggMC44MDAwMDNMMTQwIDBMMTQxLjIgMC44MDAwMDNDMTQyIDEuMiAxNjAuNCAxMi42IDE2MC40IDI3LjNDMTYwLjQgNDIuMSAxNDIgNTMuNSAxNDEuMiA1My45TDE0MCA1NC43TDEzOC44IDUzLjlDMTM4IDUzLjUgMTE5LjYgNDIuMSAxMTkuNiAyNy4zWk0xMjQuNCAyNy4zQzEyNC40IDM3LjUgMTM2LjEgNDYuNCAxNDAgNDkuMUMxNDMuOSA0Ni40IDE1NS42IDM3LjQgMTU1LjYgMjcuM0MxNTUuNiAxNy4yIDE0My45IDguMzAwMDEgMTQwIDUuNjAwMDFDMTM2LjEgOC4zMDAwMSAxMjQuNCAxNy4yIDEyNC40IDI3LjNaIiBmaWxsPSIjQjg4RjY0Ii8+CjxwYXRoIGQ9Ik0xNDYuOCAxMDkuMkMxNjguMyA3OC4yOTk2IDE5MC42IDQ2LjI5OTYgMjE3LjMgNDYuMjk5NkMyMTcuMyA0My41OTk2IDIxNSA0MS40OTk2IDIxMi4zIDQxLjg5OTZDMTg1LjQgNDUuMzk5NiAxNjMuOCA3Ni4zOTk2IDE0Mi45IDEwNi41QzE0MS45IDEwNy45IDE0MC45MzMgMTA5LjI2NiAxNDAgMTEwLjZDMTM5LjA2NyAxMDkuMjY2IDEzOC4xIDEwNy45IDEzNy4xIDEwNi41QzExNi4yIDc2LjQ5OTYgOTQuNiA0NS4zOTk2IDY3LjcgNDEuODk5NkM2NS4xIDQxLjQ5OTYgNjIuNyA0My41OTk2IDYyLjcgNDYuMjk5NkM4OS4zOTk5IDQ2LjI5OTYgMTExLjcgNzguMjk5NiAxMzMuMiAxMDkuMkMxMzQuNTMzIDExMS4wNjYgMTM1LjgzMyAxMTIuOTMzIDEzNy4xIDExNC44QzEyOC44IDEyNi41IDEyMC44IDEzNy40IDExMi41IDE0NkMxMDYuMSAxMzguMyA5OS45OTk4IDEyOC44IDkzLjc5OTggMTE5Qzg1LjI5OTggMTA1LjcgNzYuNTk5OSA5MS45OTk2IDY2LjM5OTkgODEuNDk5NkM1NS45OTk5IDcwLjg5OTYgNDUuNSA2NS4wOTk2IDM0LjIgNjMuNjk5NkMzMS41IDYzLjM5OTYgMjkuMDk5OSA2NS40OTk2IDI5LjA5OTkgNjguMTk5NkM1NS43OTk5IDY4LjE5OTYgNzMuMDk5OCA5NS4yOTk2IDg5Ljc5OTggMTIxLjVDOTYuMTk5OCAxMzEuNiAxMDIuNCAxNDEuNCAxMDkuMSAxNDkuNEM5OS4zOTk5IDE1OC42IDkwLjQ5OTkgMTYzLjEgODEuODk5OSAxNjMuMUM2Ni41OTk5IDE2My4xIDU3LjE5OTggMTQ2LjkgNDcuMjk5OCAxMjkuN0M0MS41OTk4IDExOS44IDM1LjggMTA5LjcgMjguNSAxMDEuOUMyMS4zIDk0LjM5OTYgMTMuNTk5OSA5MC4wOTk2IDUuMDk5ODUgODguODk5NkMzLjc5OTg1IDg4Ljc5OTYgMi40OTk4NSA4OS4xOTk2IDEuNTk5ODUgODkuOTk5NkMwLjU5OTg1NCA5MC43OTk2IDAgOTEuOTk5NiAwIDkzLjI5OTZDMjAuOSA5My4yOTk2IDMyLjIgMTEzIDQzLjIgMTMyQzQ4LjQgMTQxLjIgNTMuMzk5OSAxNDkuOCA1OS4zOTk5IDE1Ni40QzY2LjI5OTkgMTY0LjIgNzMuNjk5OSAxNjcuOSA4MS44OTk5IDE2Ny45Qzg3Ljc5OTkgMTY3LjkgOTMuNyAxNjYuMSA5OS43IDE2Mi43QzEwNC45IDE1OS42IDExMC4zIDE1NS4zIDExNiAxNDkuM0MxMjYuNCAxMzguNSAxMzYuMyAxMjQuMyAxNDYuOCAxMDkuMloiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI1MC44IDY4LjIwMDVDMjUwLjggNjUuNTAwNSAyNDguNSA2My40MDA1IDI0NS44IDYzLjcwMDVDMjM0LjUgNjUuMTAwNSAyMjQgNzAuOTAwNCAyMTMuNiA4MS41MDA0QzIwMy40IDkyLjAwMDQgMTk0LjcgMTA1LjcgMTg2LjIgMTE5QzE4MCAxMjguOCAxNzMuOSAxMzguMyAxNjcuNSAxNDZDMTYwLjMgMTM4LjYgMTUzLjQgMTI5LjUgMTQ2LjMgMTE5LjZDMTQ1LjMgMTIxIDE0NC4zMzMgMTIyLjMzNCAxNDMuNCAxMjMuNkMxNTAuMiAxMzMuMiAxNTcgMTQyIDE2NC4xIDE0OS4zQzE2NC4xNjcgMTQ5LjQzNCAxNjQuMjY3IDE0OS41NjcgMTY0LjQgMTQ5LjdDMTU2LjkgMTU3LjggMTQ5IDE2My4xIDE0MCAxNjMuMUMxMzIuNSAxNjMuMSAxMjUuNyAxNTkuNCAxMTkuMyAxNTMuM0MxMTguMDMzIDE1NC42MzQgMTE2LjkzMyAxNTUuOCAxMTYgMTU2LjhDMTIzLjIgMTYzLjYgMTMxIDE2Ny45IDE0MCAxNjcuOUMxNjAuNyAxNjcuOSAxNzUuMSAxNDUuNCAxOTAuMiAxMjEuNUMyMDYuOSA5NS4zMDA0IDIyNC4yIDY4LjIwMDUgMjUwLjggNjguMjAwNVoiIGZpbGw9IiMzMDM0NzYiLz4KPHBhdGggZD0iTTI3NC45IDg4Ljg5OTZDMjY2LjMgOTAuMDk5NiAyNTguNiA5NC4zOTk2IDI1MS41IDEwMS45QzI0NC4yIDEwOS43IDIzOC4zIDExOS45IDIzMi43IDEyOS43QzIyMi44IDE0Ni45IDIxMy40IDE2My4xIDE5OC4xIDE2My4xQzE5MSAxNjMuMSAxODMuNyAxNjAgMTc1LjkgMTUzLjhMMTcyLjkgMTU3LjVDMTc1LjQgMTU5LjUgMTc3LjkgMTYxLjMgMTgwLjMgMTYyLjdDMTg2LjMgMTY2LjEgMTkyLjIgMTY3LjkgMTk4LjEgMTY3LjlDMjA2LjMgMTY3LjkgMjEzLjcgMTY0LjEgMjIwLjYgMTU2LjRDMjI2LjYgMTQ5LjggMjMxLjYgMTQxLjIgMjM2LjggMTMyQzI0Ny44IDExMyAyNTkuMSA5My4yOTk2IDI3OS45IDkzLjI5OTZDMjc5LjkgOTAuNTk5NiAyNzcuNSA4OC40OTk2IDI3NC45IDg4Ljg5OTZaIiBmaWxsPSIjMzAzNDc2Ii8+Cjwvc3ZnPgo=" style="height:32px;width:auto;">'+
-    '</div>'+
-    '<div class="summary">'+
-      '<div class="sum-item"><div class="sum-num">'+sorted.length+'</div><div class="sum-label">встреч</div></div>'+
-      '<div class="sum-item"><div class="sum-num">10:00</div><div class="sum-label">начало</div></div>'+
-      '<div class="sum-item"><div class="sum-num">12:45</div><div class="sum-label">конец</div></div>'+
-    '</div>'+
-    '<table><thead><tr><th>Время</th><th>Участник</th><th>Компания</th></tr></thead>'+
-    '<tbody>'+(rows||'<tr><td colspan="3" style="padding:20px;text-align:center;color:#aaa;">Нет подтверждённых встреч</td></tr>')+'</tbody></table>'+
-    '<div class="footer">Corona Travel · Travel Synergy Workshop · '+today+'</div>'+
-    '</body></html>');
-  win.document.close();
-  setTimeout(function(){ win.print(); },400);
-}
-
-// ══════════════════════════════════════════════
-// ADMIN: upload avatar/logo for any participant
-// ══════════════════════════════════════════════
-function uploadParticipantImage(input, userId, type) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 1*1024*1024) { toast('Файл слишком большой — до 1 МБ'); return; }
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    const dataUrl = e.target.result;
-    const updateData2 = type === 'avatar' ? { avatar_url: dataUrl } : { logo_url: dataUrl };
-    const { error } = await sb.from('users').update(updateData2).eq('id', userId);
-    if (error) { toast('Ошибка: ' + error.message); return; }
-    // update local cache
-    const u = [...allSellers,...allBuyers].find(function(x){ return x.id===userId; });
-    if (u) u[col] = dataUrl;
-    toast(type==='avatar' ? 'Фото загружено ✓' : 'Логотип загружен ✓');
-    renderAdminParticipants();
-  };
-  reader.readAsDataURL(file);
-}
-
-
-
-// ══════════════════════════════════════════════
-// SELLER PROFILE CARD (for buyers to view)
-// ══════════════════════════════════════════════
-function showSellerCard(sellerId) {
-  const seller = allSellers.find(function(s){ return s.id === sellerId; });
-  if (!seller) return;
-  const initials = (seller.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-
-  const div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.style.display = 'flex';
-  div.innerHTML =
-    '<div class="modal" style="width:440px;">' +
-      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:18px;color:var(--gold);flex-shrink:0;overflow:hidden;">' +
-          (seller.avatar_url ? '<img src="'+seller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
-        '</div>' +
-        '<div style="flex:1;">' +
-          '<div style="font-size:17px;font-weight:600;">' + seller.company + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + seller.name + '</div>' +
-        '</div>' +
-        (seller.logo_url ? '<img src="'+seller.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
-      '</div>' +
-      '<div class="profile-block">' +
-        (seller.directions&&seller.directions.length ? '<div class="profile-row"><span class="profile-key">Направления</span><span class="profile-val">' + seller.directions.map(function(d){return '<span class="tag">'+d+'</span>';}).join(' ') + '</span></div>' : '') +
-        (seller.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">'+seller.audience+'</span></div>' : '') +
-        (seller.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">'+seller.services+'</span></div>' : '') +
-        (seller.utp ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">'+seller.utp+'</span></div>' : '') +
-        (seller.notes ? '<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">'+seller.notes+'</span></div>' : '') +
-        (!seller.directions&&!seller.audience&&!seller.utp ?
-          '<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:13px;">Участник ещё не заполнил профиль</div>' : '') +
-      '</div>' +
-      '<div class="modal-actions">' +
-        '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
-      '</div>' +
-    '</div>';
-
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-
-
-// ══════════════════════════════════════════════
-// QUICK COPY credentials
-// ══════════════════════════════════════════════
-function quickCopy(btn) {
-  const login = btn.dataset.login || '';
-  const pass  = btn.dataset.pass  || '';
-  const text = 'Логин: ' + login + '\nПароль: ' + pass;
-  const doToast = function() { toast('✓ Логин и пароль скопированы'); };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(doToast).catch(function() {
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-      ta.remove(); doToast();
-    });
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    ta.remove(); doToast();
-  }
-}
-
-
-
-// ── NEW COMPANY MODAL ──
-function openAddNewCompanyModal() {
-  var pass = generatePassword();
-  var div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.id = 'modalAddPerson';
-  div.style.display = 'flex';
-  div.innerHTML =
-    '<div class="modal" style="width:480px;">' +
-      '<div class="modal-title">Новая компания · первый участник</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-        '<div class="form-group"><label class="form-label">Название компании</label>' +
-          '<input id="ap_company" class="form-input" placeholder="Maldives Pro" oninput="apPreviewLogin(this.value)"></div>' +
-        '<div class="form-group"><label class="form-label">Роль</label>' +
-          '<select id="ap_role" class="form-input"><option value="seller">Селлер</option><option value="buyer">Байер</option></select></div>' +
-        '<div class="form-group" style="grid-column:1/-1;"><label class="form-label">Имя контакта</label>' +
-          '<input id="ap_name" class="form-input" placeholder="Анна Морозова"></div>' +
-      '</div>' +
-      '<div style="margin-top:8px;padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;display:flex;gap:12px;align-items:center;">' +
-        '<span style="color:var(--text-dim);">Логин:</span>' +
-        '<span id="ap_loginVal" style="color:var(--gold);font-family:monospace;font-weight:500;">—</span>' +
-        '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
-        '<span id="ap_passVal" style="color:var(--gold-lt);font-family:monospace;font-weight:500;">' + pass + '</span>' +
-      '</div>' +
-      '<input id="ap_pass_hidden" type="hidden" value="' + pass + '">' +
-      '<input id="ap_is_new_company" type="hidden" value="1">' +
-      '<div class="modal-actions" style="margin-top:16px;">' +
-        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalAddPerson\').remove()">Отмена</button>' +
-        '<button class="btn btn-gold btn-sm" onclick="createParticipantFromModal()">+ Создать</button>' +
-      '</div>' +
-    '</div>';
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-// ── ADD PERSON TO EXISTING COMPANY ──
-// Fetches existing company login+pass and reuses them
-async function openAddPersonModal(btn) {
-  var company = btn.dataset.company;
-  var role = btn.dataset.role;
-
-  // Get existing login+pass from first person in this company
-  var { data: existing } = await sb.from('users')
-    .select('login, password_hash').eq('company', company).eq('event_id', EVENT_ID)
-    .neq('role','admin').limit(1);
-  var sharedLogin = existing && existing.length ? existing[0].login : generateLogin(company);
-  var sharedPass  = existing && existing.length ? existing[0].password_hash : generatePassword();
-
-  var roleCls = role === 'seller' ? 'role-seller' : 'role-buyer';
-  var roleRu  = role === 'seller' ? 'SELLER' : 'БАЙЕР';
-
-  var div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.id = 'modalAddPerson';
-  div.style.display = 'flex';
-  div.innerHTML =
-    '<div class="modal" style="width:480px;">' +
-      '<div class="modal-title">Добавить представителя</div>' +
-      '<div style="margin-bottom:14px;padding:8px 12px;background:rgba(178,144,106,0.1);border-radius:8px;font-size:13px;">' +
-        '<span style="color:var(--text-dim);">Компания: </span>' +
-        '<b style="color:var(--gold);">' + escHtml(company) + '</b>' +
-        ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleRu + '</span>' +
-      '</div>' +
-      '<input id="ap_company" type="hidden" value="' + escHtml(company) + '">' +
-      '<input id="ap_role" type="hidden" value="' + escHtml(role) + '">' +
-      '<input id="ap_is_new_company" type="hidden" value="0">' +
-      '<div class="form-group"><label class="form-label">Имя контакта</label>' +
-        '<input id="ap_name" class="form-input" placeholder="Имя Фамилия"></div>' +
-      '<div style="margin-top:8px;padding:10px 14px;background:rgba(26,29,74,0.6);border-radius:8px;font-size:13px;">' +
-        '<div style="color:var(--text-dim);font-size:11px;margin-bottom:6px;">Будет использован общий логин компании:</div>' +
-        '<div style="display:flex;gap:12px;align-items:center;">' +
-          '<span style="color:var(--text-dim);">Логин:</span>' +
-          '<b style="color:var(--gold);font-family:monospace;">' + escHtml(sharedLogin) + '</b>' +
-          '<span style="color:var(--text-dim);margin-left:8px;">Пароль:</span>' +
-          '<b style="color:var(--gold-lt);font-family:monospace;">' + escHtml(sharedPass) + '</b>' +
-        '</div>' +
-      '</div>' +
-      '<input id="ap_pass_hidden" type="hidden" value="' + escHtml(sharedPass) + '">' +
-      '<input id="ap_login_hidden" type="hidden" value="' + escHtml(sharedLogin) + '">' +
-      '<div class="modal-actions" style="margin-top:16px;">' +
-        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalAddPerson\').remove()">Отмена</button>' +
-        '<button class="btn btn-gold btn-sm" onclick="createParticipantFromModal()">+ Создать</button>' +
-      '</div>' +
-    '</div>';
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-function apPreviewLogin(val) {
-  var el = document.getElementById('ap_loginVal');
-  if (el) el.textContent = generateLogin(val) || '—';
-}
-
-// Sync all company members to the same login+pass (first member's credentials)
-async function syncCompanyLogins(btn) {
-  var company = btn.dataset.company;
-  var login   = btn.dataset.login;
-  var pass    = btn.dataset.pass;
-  if (!confirm('Синхронизировать всех участников "' + company + '" на логин: ' + login + '?\nВсе они будут входить под одним логином и паролем.')) return;
-  var { error } = await sb.from('users')
-    .update({ login: login, password_hash: pass })
-    .eq('company', company)
-    .eq('event_id', EVENT_ID)
-    .neq('role', 'admin');
-  if (error) { toast('Ошибка: ' + error.message); return; }
-  toast('Логины синхронизированы ✓');
-  await loadUsers();
-  renderAdmin();
-}
-
-async function createParticipantFromModal() {
-  var company = (document.getElementById('ap_company').value || '').trim();
-  var name    = (document.getElementById('ap_name').value || '').trim();
-  var role    = document.getElementById('ap_role').value || 'seller';
-  var pass    = document.getElementById('ap_pass_hidden').value;
-  var isNew   = document.getElementById('ap_is_new_company').value === '1';
-
-  if (!company || !name) { toast('Заполни название компании и имя'); return; }
-
-  var finalLogin;
-  if (isNew) {
-    // New company — generate unique login
-    var login = generateLogin(company);
-    var { data: dup } = await sb.from('users').select('id').eq('login', login).eq('event_id', EVENT_ID);
-    finalLogin = (dup && dup.length) ? login + Math.floor(Math.random()*8+2) : login;
-  } else {
-    // Existing company — reuse shared login (stored in hidden field)
-    finalLogin = document.getElementById('ap_login_hidden').value;
-  }
-
-  var { error } = await sb.from('users').insert({
-    login: finalLogin, password_hash: pass, role: role, name: name, company: company,
-    event_id: EVENT_ID, profile_ready: false,
-  });
-  if (error) { toast('Ошибка: ' + error.message); return; }
-
-  var modal = document.getElementById('modalAddPerson');
+  const modal = document.getElementById('modalAddPerson');
   if (modal) modal.remove();
   showCredentials(finalLogin, pass, name, company, role);
   await loadUsers();
   renderAdmin();
 }
 
-function doDelete(btn) {
-  var uid = btn.dataset.uid;
-  var uname = btn.dataset.uname;
-  deleteParticipant(uid, uname);
+// ── Admin: Edit participant ──
+let _editUserId = null;
+
+async function openEditParticipant(userId) {
+  const { data: u } = await sb.from('users').select('*').eq('id', userId).single();
+  if (!u) return;
+  _editUserId = userId;
+
+  const { data: companyPeople } = await sb.from('users')
+    .select('id,name,notes').eq('company', u.company).eq('event_id', EVENT_ID)
+    .neq('role','admin').order('name');
+
+  const isSeller = u.role === 'seller';
+
+  const peopleRows = (companyPeople||[]).map(p => {
+    const isMe = p.id === userId;
+    const btn = isMe ? '' : '<button class="btn btn-outline btn-sm" style="font-size:10px;" onclick="document.getElementById(\'modalEditParticipant\').remove();openEditParticipant(\'' + p.id + '\')">Изменить</button>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(178,144,106,0.07);">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);">' + ini(p.name) + '</div>' +
+      '<div style="flex:1;font-size:13px;">' + esc(p.name) + (isMe ? ' <span style="font-size:10px;color:var(--gold-lt);">(редактируется)</span>' : '') + '</div>' +
+      btn +
+    '</div>';
+  }).join('');
+
+  const div = document.createElement('div');
+  div.className = 'modal-overlay'; div.id = 'modalEditParticipant'; div.style.display = 'flex';
+  div.innerHTML =
+    '<div class="modal" style="width:540px;max-height:90vh;overflow-y:auto;">' +
+      '<div class="modal-title">Компания: ' + esc(u.company) + '</div>' +
+      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:12px 14px;margin-bottom:16px;">' +
+        '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Представители</div>' +
+        peopleRows +
+        '<button class="btn btn-outline btn-sm" style="margin-top:10px;font-size:11px;width:100%;" onclick="document.getElementById(\'modalEditParticipant\').remove();openAddPersonModal(this)" data-company="' + esc(u.company) + '" data-role="' + u.role + '">+ Добавить представителя</button>' +
+      '</div>' +
+      '<div class="divider" style="margin:0 0 14px;"></div>' +
+      '<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Данные: <b style="color:var(--gold);">' + esc(u.name) + '</b></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="form-group"><label class="form-label">Имя</label><input id="ep_name" class="form-input" value="' + esc(u.name) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Должность</label><input id="ep_notes" class="form-input" value="' + esc(u.notes||'') + '" placeholder="Менеджер..."></div>' +
+        '<div class="form-group"><label class="form-label">Роль</label><select id="ep_role" class="form-input"><option value="seller"' + (u.role==='seller'?' selected':'') + '>Селлер</option><option value="buyer"' + (u.role==='buyer'?' selected':'') + '>Байер</option></select></div>' +
+        '<div class="form-group"><label class="form-label">Telegram ID</label><input id="ep_tg" class="form-input" value="' + esc(u.telegram_id||'') + '" placeholder="@username"></div>' +
+        '<input type="hidden" id="ep_company" value="' + esc(u.company) + '">' +
+        '<input type="hidden" id="ep_login" value="' + esc(u.login) + '">' +
+      '</div>' +
+      (isSeller ?
+        '<div class="divider"></div>' +
+        '<div class="form-group"><label class="form-label">Направления (через запятую)</label><input id="ep_dir" class="form-input" value="' + esc((u.directions||[]).join(', ')) + '"></div>' +
+        '<div class="form-group"><label class="form-label">Целевая аудитория</label><input id="ep_aud" class="form-input" value="' + esc(u.audience||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Ключевые услуги</label><input id="ep_srv" class="form-input" value="' + esc(u.services||'') + '"></div>' +
+        '<div class="form-group"><label class="form-label">УТП</label><textarea id="ep_utp" class="form-input">' + esc(u.utp||'') + '</textarea></div>'
+      : '') +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalEditParticipant\').remove()">Отмена</button>' +
+        '<button class="btn btn-gold btn-sm" onclick="saveEditParticipant()">Сохранить</button>' +
+      '</div>' +
+    '</div>';
+  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
 }
 
-
-// ══════════════════════════════════════════════
-// MISSING FUNCTIONS — restored
-// ══════════════════════════════════════════════
-
-function togglePass() {
-  var inp = document.getElementById('loginPass');
-  var icon = document.getElementById('eyeIcon');
-  var show = inp.type === 'password';
-  inp.type = show ? 'text' : 'password';
-  icon.innerHTML = show
-    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
-    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+async function saveEditParticipant() {
+  const get = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  const updates = {
+    name:        get('ep_name'),
+    notes:       get('ep_notes'),
+    company:     get('ep_company'),
+    login:       get('ep_login'),
+    role:        get('ep_role'),
+    telegram_id: get('ep_tg'),
+  };
+  if (updates.role === 'seller') {
+    const dir = get('ep_dir');
+    updates.directions = dir ? dir.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    updates.audience   = get('ep_aud');
+    updates.services   = get('ep_srv');
+    updates.utp        = get('ep_utp');
+    updates.profile_ready = !!(updates.directions.length && updates.utp);
+  }
+  const { error } = await sb.from('users').update(updates).eq('id', _editUserId);
+  if (error) { toast('Ошибка: ' + error.message); return; }
+  document.getElementById('modalEditParticipant').remove();
+  await loadUsers();
+  renderAdmin();
+  toast('Участник обновлён ✓');
 }
 
 async function deleteParticipant(id, name) {
@@ -1917,58 +1593,228 @@ async function deleteParticipant(id, name) {
   toast('Участник удалён');
 }
 
+// ── Admin: Logo upload for company ──
+function uploadParticipantImage(input, userId, type) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 1024*1024) { toast('Файл слишком большой — до 1 МБ'); return; }
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const dataUrl = e.target.result;
+    const field = type === 'avatar' ? 'avatar_url' : 'logo_url';
+    const { error } = await sb.from('users').update({ [field]: dataUrl }).eq('id', userId);
+    if (error) { toast('Ошибка загрузки: ' + error.message); return; }
+    // Update all members of this company with the same logo
+    if (type === 'logo') {
+      const u = [...allSellers,...allBuyers].find(x => x.id === userId);
+      if (u) {
+        await sb.from('users').update({ logo_url: dataUrl })
+          .eq('company', u.company).eq('event_id', EVENT_ID);
+      }
+    }
+    toast('Логотип загружен ✓');
+    await loadUsers();
+    renderAdminParticipants();
+  };
+  reader.readAsDataURL(file);
+}
 
-function togglePwd(el) {
-  if (el.dataset.showing === '1') {
-    el.textContent = '••••••••';
-    el.dataset.showing = '0';
-    el.style.color = 'var(--text-dim)';
-  } else {
-    el.textContent = el.dataset.pass || '—';
-    el.dataset.showing = '1';
-    el.style.color = 'var(--gold-lt)';
+// ════════════════════════════════════════════════
+// MEETINGS: Propose (Seller → Buyer)
+// ════════════════════════════════════════════════
+let proposeTarget = null;
+
+function openPropose(buyerId) {
+  proposeTarget = allBuyers.find(b => b.id === buyerId);
+  if (!proposeTarget) return;
+  const el = document.getElementById('proposeBuyerInfo');
+  el.innerHTML = '<div style="font-weight:600;">' + esc(proposeTarget.company) + '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim);">' + esc(proposeTarget.name) + '</div>';
+
+  const slotsEl = document.getElementById('proposeSlots');
+  const taken = myMeetings.filter(m =>
+    m.seller_id === currentUser.id || (m.seller && m.seller.id === currentUser.id));
+  const takenSlotIds = taken.map(m => m.slot_id);
+
+  slotsEl.innerHTML = allSlots.map(s => {
+    const busy = takenSlotIds.includes(s.id);
+    return '<button class="slot-btn' + (busy ? ' slot-busy' : '') + '" onclick="selectProposalSlot(this,\'' + s.id + '\')" ' + (busy ? 'disabled' : '') + '>' + esc(s.time_label) + '</button>';
+  }).join('');
+
+  document.getElementById('proposeAltMsg').style.display = 'none';
+  document.getElementById('modalPropose').style.display = 'flex';
+}
+
+let selectedSlotId = null;
+function selectProposalSlot(btn, slotId) {
+  document.querySelectorAll('#proposeSlots .slot-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedSlotId = slotId;
+}
+
+async function submitPropose() {
+  if (!selectedSlotId) { toast('Выберите слот'); return; }
+  if (!proposeTarget) return;
+
+  const { error } = await sb.from('meetings').insert({
+    seller_id: currentUser.id,
+    buyer_id:  proposeTarget.id,
+    slot_id:   selectedSlotId,
+    status:    'pending',
+    proposed_by: 'seller',
+    event_id:  EVENT_ID,
+  });
+  if (error) { toast('Ошибка: ' + error.message); return; }
+
+  await sb.from('notifications').insert({
+    user_id: proposeTarget.id,
+    message: currentUser.company + ' предлагает встречу в ' + (allSlots.find(s=>s.id===selectedSlotId)?.time_label||''),
+    type: 'meeting_request',
+    event_id: EVENT_ID,
+  });
+
+  closeModal('modalPropose');
+  selectedSlotId = null;
+  await loadMeetings();
+  render();
+  toast('Запрос отправлен ✓');
+}
+
+// ════════════════════════════════════════════════
+// MEETINGS: Respond (Buyer)
+// ════════════════════════════════════════════════
+let meetingTarget = null;
+let altSlotId = null;
+
+function openRespondModal(meetingId) {
+  meetingTarget = myMeetings.find(m => m.id === meetingId);
+  if (!meetingTarget) return;
+  const seller = meetingTarget.seller || allSellers.find(s => s.id === meetingTarget.seller_id) || {};
+  const slotLabel = meetingTarget.slot && meetingTarget.slot.time_label || '—';
+
+  document.getElementById('meetingSellerInfo').innerHTML =
+    '<div style="font-weight:600;">' + esc(seller.company||'') + '</div>' +
+    '<div style="font-size:12px;color:var(--text-dim);">' + esc(seller.name||'') + ' · ' + slotLabel + '</div>';
+
+  const altSlotsEl = document.getElementById('altSlots');
+  const takenBuyer = myMeetings.filter(m => m.status === 'confirmed' && m.id !== meetingId).map(m => m.slot_id);
+  altSlotsEl.innerHTML = allSlots.map(s => {
+    const busy = takenBuyer.includes(s.id);
+    return '<button class="slot-btn' + (busy ? ' slot-busy' : '') + '" onclick="selectAltSlot(this,\'' + s.id + '\')" ' + (busy ? 'disabled' : '') + '>' + esc(s.time_label) + '</button>';
+  }).join('');
+  altSlotId = null;
+  document.getElementById('modalMeeting').style.display = 'flex';
+}
+
+function selectAltSlot(btn, slotId) {
+  altSlotId = slotId;
+  document.querySelectorAll('#altSlots .slot-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+async function respondMeeting(status) {
+  if (!meetingTarget) return;
+  const updates = { status, updated_at: new Date().toISOString() };
+  if (status === 'pending' && altSlotId) {
+    updates.alt_slot_id = altSlotId;
+    updates.proposed_by = 'buyer';
   }
+  const { error } = await sb.from('meetings').update(updates).eq('id', meetingTarget.id);
+  if (error) { toast('Ошибка обновления'); return; }
+  const slotLabel = allSlots.find(s => s.id === meetingTarget.slot_id)?.time_label || '';
+  const msgMap = {
+    confirmed: `${currentUser.company} подтвердил встречу в ${slotLabel}`,
+    declined:  `${currentUser.company} отклонил запрос на ${slotLabel}`,
+  };
+  await sb.from('notifications').insert({
+    user_id: meetingTarget.seller_id || meetingTarget.seller?.id,
+    message: msgMap[status] || 'Ответ на запрос встречи',
+    type: 'meeting_' + status,
+  });
+  await loadMeetings();
+  closeModal('modalMeeting');
+  toast(status === 'confirmed' ? 'Встреча подтверждена ✓' : 'Запрос отклонён');
+  renderRequests();
+}
+
+// ════════════════════════════════════════════════
+// UTILS & HELPERS
+// ════════════════════════════════════════════════
+function generateLogin(company) {
+  const map = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',' ':''};
+  return company.toLowerCase().split('').map(c => map[c] !== undefined ? map[c] : c).join('').replace(/[^a-z0-9]/g,'').slice(0,16);
+}
+
+function generatePassword() {
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+  const digits = '23456789';
+  const special = '!@#';
+  let p = upper[Math.floor(Math.random()*upper.length)];
+  for (let i=0;i<5;i++) p += lower[Math.floor(Math.random()*lower.length)];
+  p += digits[Math.floor(Math.random()*digits.length)];
+  p += special[Math.floor(Math.random()*special.length)];
+  return p;
+}
+
+function showCredentials(login, pass, name, company, role) {
+  const roleLabel = role === 'seller' ? 'Селлер' : 'Байер';
+  const copyText  = 'Логин: ' + login + '\nПароль: ' + pass;
+  const div = document.createElement('div');
+  div.className = 'modal-overlay'; div.style.display = 'flex';
+  const inner = document.createElement('div');
+  inner.className = 'modal'; inner.style.cssText = 'width:420px;text-align:center;';
+  inner.innerHTML =
+    '<div style="font-size:32px;margin-bottom:8px;">✓</div>' +
+    '<div class="modal-title" style="text-align:center;margin-bottom:16px;">Участник создан!</div>' +
+    '<div style="background:rgba(26,29,74,0.8);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">' +
+      '<div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">' + esc(name) + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">' + esc(company) + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">' + roleLabel + '</span></div>' +
+      '<div class="divider"></div>' +
+      '<div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold);">' + esc(login) + '</span></div>' +
+      '<div class="profile-row"><span class="profile-key">Пароль</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold-lt);">' + esc(pass) + '</span></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--warn);margin-bottom:16px;">⚠ Скопируй и отправь участнику — пароль показывается один раз</div>';
+  const btnCopy = document.createElement('button');
+  btnCopy.className = 'btn btn-gold'; btnCopy.style.cssText = 'width:100%;justify-content:center;margin-bottom:8px;';
+  btnCopy.textContent = 'Скопировать данные';
+  btnCopy.onclick = () => { navigator.clipboard.writeText(copyText); btnCopy.textContent = '✓ Скопировано!'; setTimeout(()=>{ btnCopy.textContent='Скопировать данные'; },2000); };
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-outline'; btnClose.style.cssText = 'width:100%;justify-content:center;';
+  btnClose.textContent = 'Закрыть'; btnClose.onclick = () => div.remove();
+  inner.appendChild(btnCopy); inner.appendChild(btnClose);
+  div.appendChild(inner);
+  div.addEventListener('click', e => { if(e.target===div) div.remove(); });
+  document.body.appendChild(div);
 }
 
 function buildBtn(type, login, pass, uid) {
-  var el;
+  let el;
   if (type === 'copy') {
     el = document.createElement('button');
-    el.className = 'btn btn-outline btn-sm';
-    el.title = 'Скопировать';
-    el.dataset.login = login;
-    el.dataset.pass = pass;
-    el.setAttribute('onclick', 'quickCopy(this)');
+    el.className = 'btn btn-outline btn-sm'; el.title = 'Скопировать';
+    el.dataset.login = login; el.dataset.pass = pass;
+    el.setAttribute('onclick','quickCopy(this)');
     el.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     return el.outerHTML;
   }
-  if (type === 'avatar') {
-    var inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp'; inp.style.display = 'none';
-    inp.dataset.uid = uid; inp.dataset.imgtype = 'avatar';
-    inp.setAttribute('onchange', 'uploadParticipantImage(this,this.dataset.uid,this.dataset.imgtype)');
-    var lbl = document.createElement('label');
-    lbl.className = 'btn btn-outline btn-sm'; lbl.style.cursor = 'pointer'; lbl.title = 'Фото';
-    lbl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>';
+  if (type === 'logo-company') {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp,image/svg+xml'; inp.style.display = 'none';
+    inp.dataset.uid = uid; inp.dataset.imgtype = 'logo';
+    inp.setAttribute('onchange','uploadParticipantImage(this,this.dataset.uid,this.dataset.imgtype)');
+    const lbl = document.createElement('label');
+    lbl.className = 'btn btn-outline btn-sm'; lbl.style.cursor = 'pointer'; lbl.title = 'Логотип';
+    lbl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
     lbl.appendChild(inp);
     return lbl.outerHTML;
-  }
-  if (type === 'logo-company') {
-    var inp2 = document.createElement('input');
-    inp2.type = 'file'; inp2.accept = 'image/jpeg,image/png,image/webp,image/svg+xml'; inp2.style.display = 'none';
-    inp2.dataset.uid = uid; inp2.dataset.imgtype = 'logo';
-    inp2.setAttribute('onchange', 'uploadParticipantImage(this,this.dataset.uid,this.dataset.imgtype)');
-    var lbl2 = document.createElement('label');
-    lbl2.className = 'btn btn-outline btn-sm'; lbl2.style.cursor = 'pointer'; lbl2.title = 'Логотип';
-    lbl2.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-    lbl2.appendChild(inp2);
-    return lbl2.outerHTML;
   }
   if (type === 'pdf') {
     el = document.createElement('button');
     el.className = 'btn btn-outline btn-sm'; el.title = 'PDF';
     el.dataset.uid = uid;
-    el.setAttribute('onclick', 'exportParticipantPDF(this.dataset.uid)');
+    el.setAttribute('onclick','exportParticipantPDF(this.dataset.uid)');
     el.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
     return el.outerHTML;
   }
@@ -1976,7 +1822,7 @@ function buildBtn(type, login, pass, uid) {
     el = document.createElement('button');
     el.className = 'btn btn-outline btn-sm'; el.title = 'Редактировать';
     el.dataset.uid = uid;
-    el.setAttribute('onclick', 'openEditParticipant(this.dataset.uid)');
+    el.setAttribute('onclick','openEditParticipant(this.dataset.uid)');
     el.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     return el.outerHTML;
   }
@@ -1984,36 +1830,142 @@ function buildBtn(type, login, pass, uid) {
     el = document.createElement('button');
     el.className = 'btn btn-danger btn-sm'; el.title = 'Удалить';
     el.dataset.uid = uid; el.dataset.uname = login;
-    el.setAttribute('onclick', 'doDelete(this)');
+    el.setAttribute('onclick','deleteParticipant(this.dataset.uid,this.dataset.uname)');
     el.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
     return el.outerHTML;
   }
   return '';
 }
 
-function openAddPersonModalByData(btn) {
-  var company = btn.dataset.company;
-  var role = btn.dataset.role;
-  // close edit modal if still open
-  var em = document.getElementById('modalEditParticipant');
-  if (em) em.remove();
-  openAddPersonModal({ dataset: { company: company, role: role } });
+function quickCopy(btn) {
+  const text = 'Логин: ' + btn.dataset.login + '\nПароль: ' + btn.dataset.pass;
+  navigator.clipboard.writeText(text);
+  toast('Скопировано ✓');
 }
 
-function addSiblingFromCompany(btn) {
-  openAddPersonModal(btn);
+function togglePwd(el) {
+  if (el.dataset.showing === '1') { el.textContent = '••••••••'; el.dataset.showing = '0'; el.style.color = 'var(--text-dim)'; }
+  else { el.textContent = el.dataset.pass || '—'; el.dataset.showing = '1'; el.style.color = 'var(--gold-lt)'; }
 }
 
-// ══════════════════════════════════════════════
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU', { day:'numeric', month:'short' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ════════════════════════════════════════════════
+// PDF EXPORTS
+// ════════════════════════════════════════════════
+function exportSchedulePDF() {
+  const confirmed = myMeetings.filter(m => m.status === 'confirmed')
+    .sort((a,b) => (a.slot?.sort_order||0) - (b.slot?.sort_order||0));
+  const u = currentUser;
+  const roleRu = u.role === 'seller' ? 'Селлер' : 'Байер';
+  const today = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
+  const rows = confirmed.map(m => {
+    const other = u.role === 'seller' ? m.buyer : m.seller;
+    return '<tr><td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;font-weight:600;color:#303672;">' + (m.slot?.time_label||'—') + '</td>' +
+      '<td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;">' + esc(other?.name||'—') + '</td>' +
+      '<td style="padding:10px 14px;border-bottom:1px solid #e0d5c8;color:#666;">' + esc(other?.company||'—') + '</td></tr>';
+  }).join('');
+  const win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Расписание · ' + u.name + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;color:#1a1d4a;padding:32px;}h1{font-size:22px;margin-bottom:4px;}' +
+    '.meta{font-size:13px;color:#888;margin-bottom:24px;}.badge{background:#B2906A;color:#fff;padding:2px 10px;border-radius:12px;font-size:11px;margin-left:8px;}' +
+    'table{width:100%;border-collapse:collapse;}th{text-align:left;padding:10px 14px;background:#1a1d4a;color:#B2906A;font-size:12px;}' +
+    'tr:last-child td{border-bottom:none;}.footer{margin-top:24px;font-size:11px;color:#aaa;text-align:center;}@media print{body{padding:20px;}}</style>' +
+    '</head><body><h1>' + esc(u.name) + ' <span class="badge">' + roleRu + '</span></h1>' +
+    '<div class="meta">' + esc(u.company) + ' · Travel Synergy Workshop · ' + today + '</div>' +
+    '<table><thead><tr><th>Время</th><th>Участник</th><th>Компания</th></tr></thead><tbody>' +
+    (rows || '<tr><td colspan="3" style="padding:20px;text-align:center;color:#aaa;">Нет встреч</td></tr>') +
+    '</tbody></table><div class="footer">Corona Travel · ' + today + '</div></body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+async function exportParticipantPDF(userId) {
+  const { data: u } = await sb.from('users').select('*').eq('id', userId).single();
+  if (!u) return;
+  const { data: mtgs } = await sb.from('meetings')
+    .select('*, slot:slot_id(*), seller:seller_id(id,name,company), buyer:buyer_id(id,name,company)')
+    .eq('event_id', EVENT_ID).eq('status','confirmed').or('seller_id.eq.'+userId+',buyer_id.eq.'+userId);
+  const sorted = (mtgs||[]).sort((a,b) => (a.slot?.sort_order||0) - (b.slot?.sort_order||0));
+  const roleRu = u.role === 'seller' ? 'Селлер' : 'Байер';
+  const today = new Date().toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
+  const rows = sorted.map(m => {
+    const other = u.role === 'seller' ? m.buyer : m.seller;
+    return '<tr><td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;font-weight:700;color:#303476;">' + (m.slot?.time_label||'—') + '</td>' +
+      '<td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;">' + esc(other?.name||'—') + '</td>' +
+      '<td style="padding:10px 14px;border-bottom:1px solid #e8e0d5;color:#666;">' + esc(other?.company||'—') + '</td></tr>';
+  }).join('');
+  const win = window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(u.name) + '</title>' +
+    '<style>body{font-family:Arial,sans-serif;color:#1a1d4a;padding:32px;}h1{font-size:20px;}' +
+    '.meta{font-size:12px;color:#888;margin-bottom:20px;}.badge{padding:2px 10px;border-radius:12px;font-size:11px;margin-left:6px;}' +
+    '.seller-badge{background:#B88F64;color:#fff;}.buyer-badge{background:#2e7d52;color:#fff;}' +
+    'table{width:100%;border-collapse:collapse;border:1px solid #e0d5c5;}th{text-align:left;padding:10px 14px;background:#1a1d4a;color:#B88F64;font-size:11px;}' +
+    'tr:last-child td{border-bottom:none;}.footer{margin-top:20px;font-size:10px;color:#bbb;text-align:center;}@media print{body{padding:16px;}}</style>' +
+    '</head><body><h1>' + esc(u.name) + '<span class="badge ' + u.role + '-badge">' + roleRu + '</span></h1>' +
+    '<div class="meta">' + esc(u.company) + ' · Travel Synergy Workshop · ' + today + '</div>' +
+    '<table><thead><tr><th>Время</th><th>Участник</th><th>Компания</th></tr></thead><tbody>' +
+    (rows || '<tr><td colspan="3" style="padding:20px;text-align:center;color:#aaa;">Нет встреч</td></tr>') +
+    '</tbody></table><div class="footer">Corona Travel · ' + today + '</div></body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+async function exportAdminPDF() {
+  const all = await loadAllMeetings();
+  const today = new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+  let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Матрица встреч</title>' +
+    '<style>body{font-family:Arial,sans-serif;color:#1a1d4a;padding:24px;}h1{font-size:20px;}' +
+    'table{border-collapse:collapse;font-size:11px;}th,td{padding:7px 10px;border:1px solid #e0d5c5;text-align:center;}' +
+    'th{background:#1a1d4a;color:#B88F64;}.confirmed{color:#2e7d52;font-weight:700;}.pending{color:#B88F64;}' +
+    '@media print{body{padding:12px;}}</style></head><body>' +
+    '<h1>Матрица встреч · ' + today + '</h1><table><tr><th>Селлер</th>';
+  allBuyers.forEach(b => { html += '<th>' + esc(b.company) + '</th>'; });
+  html += '</tr>';
+  allSellers.forEach(s => {
+    html += '<tr><td style="text-align:left;font-weight:500;">' + esc(s.company) + '<br><span style="color:#888;font-weight:400;">' + esc(s.name) + '</span></td>';
+    allBuyers.forEach(b => {
+      const m = all.find(mt => (mt.seller_id===s.id||mt.seller?.id===s.id) && (mt.buyer_id===b.id||mt.buyer?.id===b.id));
+      html += '<td class="' + (m ? (m.status==='confirmed'?'confirmed':'pending') : '') + '">' + (m ? (m.status==='confirmed'?'✓':'⏳') : '—') + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</table></body></html>';
+  const win = window.open('','_blank');
+  win.document.write(html); win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+// ════════════════════════════════════════════════
+// REALTIME
+// ════════════════════════════════════════════════
+function setupRealtime() {
+  realtimeChannel = sb.channel('platform')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async () => {
+      await loadMeetings(); render();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, async () => {
+      await loadNotifs();
+    })
+    .subscribe();
+}
+
+// ════════════════════════════════════════════════
 // BOOT
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════════
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
 (async () => {
   const ok = await checkSession();
-  if (ok) {
-    await startApp();
-  } else {
-    document.getElementById('loginPage').style.display = 'flex';
-  }
+  if (ok) { await startApp(); }
+  else { document.getElementById('loginPage').style.display = 'flex'; }
 })();
 </script>
 </body>
