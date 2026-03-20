@@ -623,6 +623,13 @@ let myMeetings  = [];
 let myMatches   = [];
 let myNotifs    = [];
 
+// getMatch — возвращает {rate, reason} для байера по его id
+function getMatch(buyerId) {
+  if (!myMatches || !myMatches.length) return { rate: 0, reason: '' };
+  const m = myMatches.find(function(x) { return x.buyer_id === buyerId; });
+  return m ? { rate: m.match_rate || 0, reason: m.match_reason || '' } : { rate: 0, reason: '' };
+}
+
 // modal state
 let proposeTarget   = null;  // buyer user object
 let proposeSlotId   = null;
@@ -1505,6 +1512,10 @@ async function renderAdminParticipants() {
       ? '<img src="' + firstUser.logo_url + '" style="height:28px;width:auto;object-fit:contain;max-width:80px;">'
       : '';
 
+    var sharedLogin = firstUser.login;
+    var sharedPass  = firstUser.password_hash;
+    var needsSync = users.some(function(u){ return u.login !== sharedLogin || u.password_hash !== sharedPass; });
+
     var peopleRows = users.map(function(u) {
       var initials = u.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
       return [
@@ -1512,13 +1523,11 @@ async function renderAdminParticipants() {
           '<div style="width:32px;height:32px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);flex-shrink:0;font-weight:600;">' + initials + '</div>',
           '<div style="flex:1;min-width:0;">',
             '<div style="font-size:13px;font-weight:500;">' + u.name + '</div>',
-            '<div style="font-size:11px;color:var(--text-dim);">логин: <b style="font-family:monospace;color:var(--gold);">' + u.login + '</b> · пароль: <span data-pass="' + u.password_hash + '" style="cursor:pointer;" onclick="togglePwd(this)">••••••••</span></div>',
           '</div>',
           '<div style="display:flex;gap:4px;">',
-            buildBtn('copy', u.login, u.password_hash, u.id),
-            buildBtn('pdf', u.login, u.password_hash, u.id),
-            buildBtn('edit', u.login, u.password_hash, u.id),
-            buildBtn('del', u.name, u.password_hash, u.id),
+            buildBtn('pdf', sharedLogin, sharedPass, u.id),
+            buildBtn('edit', sharedLogin, sharedPass, u.id),
+            buildBtn('del', u.name, sharedPass, u.id),
           '</div>',
         '</div>'
       ].join('');
@@ -1526,7 +1535,8 @@ async function renderAdminParticipants() {
 
     return [
       '<div class="card" style="margin-bottom:12px;padding:16px;">',
-        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">',
+        // Company header row
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">',
           '<div style="flex:1;">',
             '<div style="font-size:15px;font-weight:600;">' + company +
               ' <span class="role-badge ' + roleCls + '" style="font-size:9px;padding:1px 6px;">' + roleLabel + '</span>' +
@@ -1536,6 +1546,15 @@ async function renderAdminParticipants() {
           logoHtml,
           buildBtn('logo-company', '', '', firstUser.id),
           '<button class="btn btn-gold btn-sm" onclick="openAddPersonModal(this)" data-company="' + company.replace(/"/g, '') + '" data-role="' + group.role + '" style="font-size:11px;white-space:nowrap;">+ Добавить</button>',
+        '</div>',
+        // Shared login block
+        '<div style="display:flex;align-items:center;gap:16px;padding:8px 12px;background:rgba(26,29,74,0.6);border-radius:8px;margin-bottom:4px;flex-wrap:wrap;">',
+          '<span style="font-size:11px;color:var(--text-dim);">Логин компании:</span>',
+          '<b style="font-family:monospace;color:var(--gold);font-size:12px;">' + sharedLogin + '</b>',
+          '<span style="font-size:11px;color:var(--text-dim);">Пароль:</span>',
+          '<span data-pass="' + sharedPass + '" style="font-family:monospace;color:var(--gold-lt);font-size:12px;cursor:pointer;" onclick="togglePwd(this)">••••••••</span>',
+          '<button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px;" onclick="quickCopy(this)" data-login="' + sharedLogin + '" data-pass="' + sharedPass + '" title="Скопировать">копировать</button>',
+          (needsSync ? '<button class="btn btn-sm" style="background:#f87171;color:#fff;font-size:10px;padding:2px 8px;" onclick="syncCompanyLogins(this)" data-company="' + company.replace(/"/g,'') + '" data-login="' + sharedLogin + '" data-pass="' + sharedPass + '" title="Разные логины — синхронизировать">⚠ синхронизировать логины</button>' : ''),
         '</div>',
         peopleRows,
       '</div>'
@@ -2101,6 +2120,23 @@ async function openAddPersonModal(btn) {
 function apPreviewLogin(val) {
   var el = document.getElementById('ap_loginVal');
   if (el) el.textContent = generateLogin(val) || '—';
+}
+
+// Sync all company members to the same login+pass (first member's credentials)
+async function syncCompanyLogins(btn) {
+  var company = btn.dataset.company;
+  var login   = btn.dataset.login;
+  var pass    = btn.dataset.pass;
+  if (!confirm('Синхронизировать всех участников "' + company + '" на логин: ' + login + '?\nВсе они будут входить под одним логином и паролем.')) return;
+  var { error } = await sb.from('users')
+    .update({ login: login, password_hash: pass })
+    .eq('company', company)
+    .eq('event_id', EVENT_ID)
+    .neq('role', 'admin');
+  if (error) { toast('Ошибка: ' + error.message); return; }
+  toast('Логины синхронизированы ✓');
+  await loadUsers();
+  renderAdmin();
 }
 
 async function createParticipantFromModal() {
