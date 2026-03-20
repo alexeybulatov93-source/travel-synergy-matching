@@ -1063,8 +1063,8 @@ function renderProfile() {
 
       (isBuyer ?
         '<div class="divider"></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Аудитория клиентов</label>' +
             '<input id="pAudience" class="form-input" value="' + esc(u.audience||'') + '" placeholder="Семьи, корпоративные..."></div>' +
           '<div class="form-group" style="margin:0;"><label class="form-label">Средний чек</label>' +
             '<input id="pServices" class="form-input" value="' + esc(u.services||'') + '" placeholder="Средний, премиум..."></div>' +
@@ -1072,7 +1072,7 @@ function renderProfile() {
         '<div class="form-group"><label class="form-label">Интересующие направления</label>' +
           '<input id="pDirections" class="form-input" value="' + esc((u.directions||[]).join(', ')) + '" placeholder="Азия, ОАЭ, Европа..."></div>' +
         '<div class="form-group"><label class="form-label">Ожидания от встреч</label>' +
-          '<textarea id="pUtp" class="form-input" rows="2" placeholder="Ищем надёжных партнёров по Азии...">' + esc(u.utp||'') + '</textarea></div>'
+          '<textarea id="pUtp" class="form-input" rows="3" placeholder="Ищем надёжных партнёров по Азии...">' + esc(u.utp||'') + '</textarea></div>'
       : '') +
 
       '<div style="margin-top:8px;">' +
@@ -1085,13 +1085,12 @@ function renderProfile() {
 async function saveProfile() {
   const get = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
   const dir = get('pDirections');
+
+  // Core fields — always exist
   const updates = {
     name:        get('pName'),
     notes:       get('pNotes'),
-    phone:       get('pPhone'),
-    email:       get('pEmail'),
     telegram_id: get('pTg'),
-    city:        get('pCity'),
     directions:  dir ? dir.split(',').map(s => s.trim()).filter(Boolean) : [],
     audience:    get('pAudience'),
     services:    get('pServices'),
@@ -1101,9 +1100,29 @@ async function saveProfile() {
   if (currentUser.role === 'seller') {
     updates.profile_ready = !!(updates.directions.length && updates.audience && updates.utp);
   }
-  const { error } = await sb.from('users').update(updates).eq('id', currentUser.id);
+
+  // Extended fields — may not exist yet
+  const phone = get('pPhone');
+  const email = get('pEmail');
+  const city  = get('pCity');
+  if (phone) updates.phone = phone;
+  if (email) updates.email = email;
+  if (city)  updates.city  = city;
+
+  let { error } = await sb.from('users').update(updates).eq('id', currentUser.id);
+
+  // If extended fields caused error, retry without them
+  if (error && (error.message.includes('column') || error.message.includes('schema'))) {
+    delete updates.phone; delete updates.email; delete updates.city;
+    const res2 = await sb.from('users').update(updates).eq('id', currentUser.id);
+    error = res2.error;
+  }
+
   if (error) { toast('Ошибка сохранения: ' + error.message); return; }
   Object.assign(currentUser, updates);
+  if (phone) currentUser.phone = phone;
+  if (email) currentUser.email = email;
+  if (city)  currentUser.city  = city;
   document.getElementById('userName').textContent = currentUser.name;
   renderProfile();
   toast('Профиль сохранён ✓');
@@ -1501,16 +1520,35 @@ async function createPersonFromModal() {
 
   if (!company || !name) { toast('Заполни название компании и имя'); return; }
 
-  // Get the shared company login (same for all members)
+  // Shared login = same as first existing member of this company
   const { data: existing } = await sb.from('users')
     .select('login').eq('company', company).eq('event_id', EVENT_ID).neq('role','admin').limit(1);
   const sharedLogin = (existing && existing.length) ? existing[0].login : generateLogin(company);
 
-  const { error } = await sb.from('users').insert({
-    login: sharedLogin, password_hash: pass, role, name, company,
-    notes: position, phone, email,
-    event_id: EVENT_ID, profile_ready: false,
-  });
+  // Insert with only core fields first (always exist)
+  const record = {
+    login: sharedLogin,
+    password_hash: pass,
+    role, name, company,
+    event_id: EVENT_ID,
+    profile_ready: false,
+  };
+
+  // Try to add extra fields — they may not exist yet in schema
+  if (position) record.notes       = position;
+  if (phone)    record.phone       = phone;
+  if (email)    record.email       = email;
+
+  let { error } = await sb.from('users').insert(record);
+
+  // If error due to unknown columns, retry with only core fields
+  if (error && (error.message.includes('column') || error.message.includes('schema'))) {
+    const core = { login: sharedLogin, password_hash: pass, role, name, company, event_id: EVENT_ID, profile_ready: false };
+    if (position) core.notes = position;
+    const res2 = await sb.from('users').insert(core);
+    error = res2.error;
+  }
+
   if (error) { toast('Ошибка: ' + error.message); return; }
 
   const modal = document.getElementById('modalAddPerson');
@@ -1518,6 +1556,7 @@ async function createPersonFromModal() {
   showCredentials(sharedLogin, pass, name, company, role);
   await loadUsers();
   if (currentUser.role === 'admin') renderAdmin();
+  else renderProfile();
 }
 
 // ── Admin: Edit participant ──
