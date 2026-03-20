@@ -469,7 +469,7 @@
       <div class="logo-label">SYNERGY<br>WORKSHOP</div>
     </div>
     <div class="header-right">
-      <div id="notifBell" style="cursor:pointer;position:relative;display:flex;align-items:center;" onclick="switchTab('notifications')">
+      <div id="notifBell" style="cursor:pointer;position:relative;display:flex;align-items:center;" onclick="switchTab('notifications&quot;)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-dim);transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-dim)'"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span id="notifCount" class="notif-count" style="display:none;position:absolute;top:-4px;right:-4px;"></span>
       </div>
       <div class="user-pill">
@@ -567,7 +567,7 @@
     </div>
     <div id="proposeAltMsg" style="display:none;font-size:12px;color:var(--warn);margin-top:8px;"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPropose')">Отмена</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalPropose&quot;)">Отмена</button>
       <button class="btn btn-gold btn-sm" id="proposeSendBtn" onclick="sendProposal()" disabled>Отправить запрос</button>
     </div>
   </div>
@@ -583,10 +583,10 @@
       <div id="altSlots" class="slot-grid"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMeeting')">Закрыть</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMeeting&quot;)">Закрыть</button>
       <button class="btn btn-outline btn-sm" id="btnAltSlot" onclick="toggleAltSlot()">⏱ Другое время</button>
-      <button class="btn btn-danger btn-sm" id="btnDecline" onclick="respondMeeting('declined')">Отклонить</button>
-      <button class="btn btn-ok btn-sm" id="btnConfirm" onclick="respondMeeting('confirmed')">Подтвердить ✓</button>
+      <button class="btn btn-danger btn-sm" id="btnDecline" onclick="respondMeeting('declined&quot;)">Отклонить</button>
+      <button class="btn btn-ok btn-sm" id="btnConfirm" onclick="respondMeeting('confirmed&quot;)">Подтвердить ✓</button>
     </div>
   </div>
 </div>
@@ -597,7 +597,7 @@
     <div class="modal-title">Почему этот матч?</div>
     <div id="reasonText" style="font-size:14px;line-height:1.6;color:var(--text);"></div>
     <div class="modal-actions">
-      <button class="btn btn-gold btn-sm" onclick="closeModal('modalReason')">Понятно</button>
+      <button class="btn btn-gold btn-sm" onclick="closeModal('modalReason&quot;)">Понятно</button>
     </div>
   </div>
 </div>
@@ -740,7 +740,7 @@ function buildTabs() {
   const tabs = TABS[currentUser.role] || [];
   const bar  = document.getElementById('tabBar');
   bar.innerHTML = tabs.map(t =>
-    `<button class="tab" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.label}</button>`
+    `<button class="tab" data-tab="${t.id}" onclick="switchTab('${t.id}&quot;)">${t.label}</button>`
   ).join('');
   switchTab(tabs[0].id);
 }
@@ -826,52 +826,49 @@ async function renderBuyers() {
     const el = document.getElementById('buyersList');
     if (!el) return;
     if (!allBuyers.length) await loadUsers();
-    const buyers = allBuyers;
-    if (!buyers.length) {
-      el.innerHTML = '<div class="empty" style="padding:32px;text-align:center;color:var(--text-dim);">Байеры не найдены</div>';
+    if (!allBuyers.length) {
+      el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-dim);">Байеры не найдены</div>';
       return;
     }
-    let sorted = [...buyers].sort(function(a,b){ return a.company.localeCompare(b.company, 'ru'); });
+    const sorted = [...allBuyers].sort((a,b) => a.company.localeCompare(b.company,'ru'));
 
     el.innerHTML = sorted.map(function(b) {
-      const initials = b.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-      const existing = myMeetings.find(function(mt) {
-        return (mt.seller_id === currentUser.id || (mt.seller && mt.seller.id === currentUser.id)) &&
-               (mt.buyer_id  === b.id           || (mt.buyer  && mt.buyer.id  === b.id));
-      });
-      const meetStatus = existing
-        ? (existing.status === 'confirmed'
-            ? '<span style="color:#4ade80;font-size:12px;font-weight:500;">&#10003; Подтверждено</span>'
-            : '<span style="color:var(--gold-lt);font-size:12px;">&#9203; Ожидает</span>')
+      const initials = b.company.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      const existing = myMeetings.find(mt =>
+        (mt.seller_id===currentUser.id||(mt.seller&&mt.seller.id===currentUser.id)) &&
+        (mt.buyer_id===b.id||(mt.buyer&&mt.buyer.id===b.id)));
+      const meetBadge = existing
+        ? (existing.status==='confirmed'
+            ? '<span style="font-size:11px;color:#4ade80;font-weight:500;">✓ Подтверждено</span>'
+            : '<span style="font-size:11px;color:var(--gold-lt);">⏳ Ожидает</span>')
+        : '';
+      const dirs = (b.directions&&b.directions.length)
+        ? b.directions.slice(0,4).map(d=>'<span class="tag" style="font-size:10px;padding:2px 8px;">'+d+'</span>').join('')
         : '';
 
-      const dirTags = (b.directions && b.directions.length)
-        ? b.directions.slice(0,4).map(function(d){ return '<span class="tag" style="font-size:10px;padding:2px 8px;">' + d + '</span>'; }).join('')
-        : '';
-
-      return '<div class="buyer-item" style="align-items:flex-start;gap:12px;padding:14px 0;">' +
-        '<div class="buyer-avatar" style="flex-shrink:0;margin-top:2px;">' + initials + '</div>' +
+      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(178,144,106,0.1);">' +
+        '<div style="width:44px;height:44px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--gold);flex-shrink:0;">' + initials + '</div>' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">' + b.company + '</div>' +
-          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">' + b.name +
-            (b.audience ? ' · <span style="color:var(--gold-lt);">' + b.audience + '</span>' : '') +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">' + escHtml(b.company) + '</div>' +
+          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">' + escHtml(b.name) +
+            (b.notes ? ' · <span style="color:var(--text-dim);">'+escHtml(b.notes)+'</span>' : '') +
           '</div>' +
-          (dirTags ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">' + dirTags + '</div>' : '') +
-          (b.services ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🧩 ' + b.services + '</div>' : '') +
+          (b.audience ? '<div style="font-size:11px;color:var(--gold-lt);margin-bottom:4px;">'+escHtml(b.audience)+'</div>' : '') +
+          (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:3px;">'+dirs+'</div>' : '') +
         '</div>' +
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
-          meetStatus +
-          '<button class="btn btn-outline btn-sm" onclick="showBuyerCard(\'' + b.id + '\')" style="font-size:11px;">Подробнее</button>' +
-          (currentUser.role === 'seller' && !existing
-            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" style="font-size:11px;">Встреча</button>'
+          meetBadge +
+          '<button class="btn btn-outline btn-sm" onclick="showBuyerCard(&quot;'+b.id+'&quot;)" style="font-size:11px;">Подробнее</button>' +
+          (currentUser.role==='seller' && !existing
+            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(&quot;'+b.id+'&quot;)" style="font-size:11px;">Встреча</button>'
             : '') +
         '</div>' +
       '</div>';
     }).join('');
   } catch(err) {
     console.error('renderBuyers error:', err);
-    var el = document.getElementById('buyersList');
-    if (el) el.innerHTML = '<div style="color:#f87171;padding:20px;">Ошибка: ' + err.message + '</div>';
+    const el = document.getElementById('buyersList');
+    if (el) el.innerHTML = '<div style="color:#f87171;padding:20px;">Ошибка: '+err.message+'</div>';
   }
 }
 
@@ -936,7 +933,7 @@ function renderRequests() {
       declined: '<span class="status-badge status-declined">Отклонено</span>',
     };
     return '<div class="buyer-item">' +
-      '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller&&seller.id) + '\')">' +
+      '<div class="buyer-info" style="cursor:pointer;" onclick="showSellerCard(\'' + (seller&&seller.id) + '\&quot;)">' +
         '<div class="buyer-avatar" style="background:var(--navy);">' + avatarHtml + '</div>' +
         '<div>' +
           '<div class="buyer-name">' + (seller&&seller.company||'—') +
@@ -947,7 +944,7 @@ function renderRequests() {
       '</div>' +
       '<div class="buyer-right">' +
         (statusMap[m.status]||'') +
-        (m.status === 'pending' ? '<button class="btn btn-gold btn-sm" onclick="openMeeting(\'' + m.id + '\')">Ответить</button>' : '') +
+        (m.status === 'pending' ? '<button class="btn btn-gold btn-sm" onclick="openMeeting(\'' + m.id + '\&quot;)">Ответить</button>' : '') +
       '</div>' +
     '</div>';
   };
@@ -989,49 +986,48 @@ function renderProfile() {
   const u = currentUser;
   const isSeller = u.role === 'seller';
   const isBuyer  = u.role === 'buyer';
-
-  const initials = u.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  const initials = u.company.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
 
   el.innerHTML =
     '<div style="max-width:600px;">' +
-
-      // Avatar + name block
+      // Company header card
       '<div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:20px;">' +
         '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);flex-shrink:0;">' + initials + '</div>' +
         '<div style="flex:1;">' +
-          '<div style="font-size:17px;font-weight:600;">' + escHtml(u.name) + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);">' + escHtml(u.company) + '</div>' +
-          '<div style="font-size:11px;color:var(--gold-lt);margin-top:2px;">Логин: ' + escHtml(u.login) + '</div>' +
+          '<div style="font-size:18px;font-weight:700;margin-bottom:2px;">' + escHtml(u.company) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);">' + escHtml(u.name) +
+            (u.notes ? ' · <span style="color:var(--text-dim);">'+escHtml(u.notes)+'</span>' : '') +
+          '</div>' +
+          '<div style="font-size:11px;color:var(--gold-lt);margin-top:3px;">Логин: ' + escHtml(u.login) + '</div>' +
         '</div>' +
+        (u.logo_url ? '<img src="'+u.logo_url+'" style="height:40px;width:auto;object-fit:contain;max-width:120px;">' : '') +
       '</div>' +
 
-      // Edit form
       '<div class="card" style="padding:20px;">' +
         '<div class="card-title" style="margin-bottom:14px;">Редактировать профиль</div>' +
 
-        // Logo upload block
-        '<div style="margin-bottom:16px;padding:14px;background:rgba(26,29,74,0.5);border-radius:10px;display:flex;align-items:center;gap:16px;">' +
+        // Logo upload
+        '<div style="margin-bottom:16px;padding:14px;background:rgba(26,29,74,0.5);border-radius:10px;display:flex;align-items:center;gap:14px;">' +
           '<div id="logoPreview" style="width:72px;height:48px;border-radius:8px;background:var(--navy-b);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid rgba(178,144,106,0.2);">' +
             (u.logo_url
-              ? '<img src="' + u.logo_url + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
+              ? '<img src="'+u.logo_url+'" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
               : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
           '</div>' +
           '<div style="flex:1;">' +
-            '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Логотип компании</div>' +
-            '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">PNG, JPG или SVG · прозрачный фон предпочтительнее · до 1 МБ · рекомендуется 300×100 px</div>' +
-            '<label class="btn btn-outline btn-sm" style="cursor:pointer;font-size:11px;">' +
-              'Загрузить логотип' +
-              '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="uploadAvatar(this,\'logo\')">' +
+            '<div style="font-size:13px;font-weight:500;margin-bottom:3px;">Логотип компании</div>' +
+            '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">PNG, JPG или SVG · прозрачный фон · до 1 МБ · рекомендуется 300×100 px</div>' +
+            '<label class="btn btn-outline btn-sm" style="cursor:pointer;font-size:11px;">Загрузить' +
+              '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="uploadAvatar(this,&quot;logo&quot;)">' +
             '</label>' +
-            (u.logo_url ? ' <button class="btn btn-sm" style="font-size:11px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);" onclick="removeLogo()">Удалить</button>' : '') +
+            (u.logo_url ? ' <button class="btn btn-sm" style="font-size:11px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);" onclick="removeLogo()">Удалить</button>' : '') +
           '</div>' +
         '</div>' +
 
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
           '<div class="form-group" style="margin:0;"><label class="form-label">Имя</label>' +
             '<input id="pName" class="form-input" value="' + escHtml(u.name) + '"></div>' +
-          '<div class="form-group" style="margin:0;"><label class="form-label">Компания</label>' +
-            '<input id="pCompany" class="form-input" value="' + escHtml(u.company) + '" ' + (isBuyer ? '' : 'readonly style="opacity:0.6;"') + '></div>' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Должность</label>' +
+            '<input id="pNotes" class="form-input" value="' + escHtml(u.notes||'') + '" placeholder="Менеджер, директор..."></div>' +
         '</div>' +
 
         (isSeller ?
@@ -1039,425 +1035,26 @@ function renderProfile() {
             '<input id="pDirections" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '" placeholder="Таиланд, Вьетнам, Бали"></div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
             '<div class="form-group" style="margin:0;"><label class="form-label">Целевая аудитория</label>' +
-              '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семейный отдых, молодёжь"></div>' +
+              '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семейный отдых..."></div>' +
             '<div class="form-group" style="margin:0;"><label class="form-label">Ключевые услуги</label>' +
-              '<input id="pServices" class="form-input" value="' + escHtml(u.services||'') + '" placeholder="Групповые туры, экскурсии"></div>' +
+              '<input id="pServices" class="form-input" value="' + escHtml(u.services||'') + '" placeholder="Туры, отели..."></div>' +
           '</div>' +
-          '<div class="form-group"><label class="form-label">УТП — уникальное торговое предложение</label>' +
-            '<textarea id="pUtp" class="form-input" rows="3" placeholder="Что вас отличает от других?">' + escHtml(u.utp||'') + '</textarea></div>' +
-          '<div class="form-group"><label class="form-label">Заметки для партнёров</label>' +
-            '<textarea id="pNotes" class="form-input" rows="2" placeholder="Принимаем группы от 15 чел, работаем по предоплате...">' + escHtml(u.notes||'') + '</textarea></div>'
+          '<div class="form-group"><label class="form-label">УТП</label>' +
+            '<textarea id="pUtp" class="form-input" rows="3" placeholder="Что вас отличает?">' + escHtml(u.utp||'') + '</textarea></div>'
         : '') +
 
         (isBuyer ?
+          '<div class="form-group"><label class="form-label">Целевая аудитория</label>' +
+            '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Корпоративные клиенты, семьи..."></div>' +
           '<div class="form-group"><label class="form-label">Что ищете / интересы</label>' +
-            '<textarea id="pNotes" class="form-input" rows="3" placeholder="Ищем туры в Азию, бюджет средний и выше...">' + escHtml(u.notes||'') + '</textarea></div>' +
-          '<div class="form-group"><label class="form-label">Целевая аудитория ваших клиентов</label>' +
-            '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семьи, корпоративные группы..."></div>'
+            '<textarea id="pServices" class="form-input" rows="3" placeholder="Туры в Азию, премиум сегмент...">' + escHtml(u.services||'') + '</textarea></div>'
         : '') +
 
-        '<div style="margin-top:4px;">' +
+        '<div style="margin-top:8px;">' +
           '<button class="btn btn-gold" onclick="saveProfile()" style="padding:10px 28px;">Сохранить профиль</button>' +
         '</div>' +
       '</div>' +
     '</div>';
-}
-
-/* ── ADMIN ── */
-async function renderAdmin() {
-  renderAdminParticipants();
-  const all = await loadAllMeetings();
-  const total     = all.length;
-  const confirmed = all.filter(m => m.status === 'confirmed').length;
-  const pending   = all.filter(m => m.status === 'pending').length;
-
-  document.getElementById('adminStats').innerHTML = `
-    <div class="card stat-box"><div class="stat-num">${total}</div><div class="stat-label">Всего встреч</div></div>
-    <div class="card stat-box"><div class="stat-num" style="color:var(--ok)">${confirmed}</div><div class="stat-label">Подтверждено</div></div>
-    <div class="card stat-box"><div class="stat-num" style="color:var(--warn)">${pending}</div><div class="stat-label">Ожидают</div></div>
-  `;
-
-  // Matrix: sellers × buyers
-  const sellers = allSellers;
-  const buyers  = allBuyers;
-
-  if (!sellers.length || !buyers.length) {
-    document.getElementById('adminMatrix').innerHTML = '<div class="empty">Нет данных</div>';
-    return;
-  }
-
-  let html = '<div class="matrix-wrap"><table class="matrix-table"><thead><tr><th>Селлер</th>';
-  buyers.forEach(b => { html += `<th>${b.company}</th>`; });
-  html += '</tr></thead><tbody>';
-
-  sellers.forEach(s => {
-    html += `<tr><td><b>${s.company}</b><br><small style="color:var(--text-dim)">${s.name}</small></td>`;
-    buyers.forEach(b => {
-      const m = all.find(mt =>
-        (mt.seller_id === s.id || mt.seller?.id === s.id) &&
-        (mt.buyer_id  === b.id || mt.buyer?.id  === b.id)
-      );
-      if (m) {
-        const cls = m.status === 'confirmed' ? 'matrix-cell-ok' : 'matrix-cell-pend';
-        html += `<td class="${cls}">${m.slot?.time_label || '—'}</td>`;
-      } else {
-        html += '<td>—</td>';
-      }
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody></table></div>';
-  document.getElementById('adminMatrix').innerHTML = html;
-}
-
-// ══════════════════════════════════════════════
-// PROPOSE MEETING (seller flow)
-// ══════════════════════════════════════════════
-function openPropose(buyerId) {
-  proposeTarget = allBuyers.find(b => b.id === buyerId);
-  proposeSlotId = null;
-  document.getElementById('proposeSendBtn').disabled = true;
-
-  const initials = proposeTarget.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('proposeBuyerInfo').innerHTML = `
-    <div class="buyer-info" style="padding:12px;background:rgba(26,29,74,0.5);border-radius:8px;">
-      <div class="buyer-avatar">${initials}</div>
-      <div>
-        <div class="buyer-name">${proposeTarget.name}</div>
-        <div class="buyer-company">${proposeTarget.company}</div>
-      </div>
-    </div>`;
-
-  // build slot grid
-  const takenSlots = myMeetings
-    .filter(m => (m.seller_id === currentUser.id || m.seller?.id === currentUser.id) && m.status !== 'declined' && m.status !== 'cancelled')
-    .map(m => m.slot_id);
-
-  document.getElementById('proposeSlots').innerHTML = allSlots.map(function(s) {
-    var taken = takenSlots.includes(s.id);
-    var cls = 'slot-btn' + (taken ? ' taken' : '');
-    var oc = taken ? '' : ' onclick="selectSlot(\'' + s.id + '\', this)"';
-    var dis = taken ? ' disabled' : '';
-    return '<button class="' + cls + '"' + oc + dis + '>' + s.time_label + '</button>';
-  }).join('');
-
-  document.getElementById('modalPropose').style.display = 'flex';
-}
-
-function selectSlot(slotId, btn) {
-  proposeSlotId = slotId;
-  document.querySelectorAll('#proposeSlots .slot-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('proposeSendBtn').disabled = false;
-}
-
-async function sendProposal() {
-  if (!proposeSlotId || !proposeTarget) return;
-  const btn = document.getElementById('proposeSendBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
-
-  const { error } = await sb.from('meetings').insert({
-    seller_id:   currentUser.id,
-    buyer_id:    proposeTarget.id,
-    slot_id:     proposeSlotId,
-    event_id:    EVENT_ID,
-    status:      'pending',
-    proposed_by: 'seller',
-  });
-
-  if (error) {
-    toast('Ошибка: ' + (error.message || 'попробуйте ещё раз'));
-    btn.disabled = false; btn.innerHTML = 'Отправить запрос';
-    return;
-  }
-
-  // Notify buyer
-  await sb.from('notifications').insert({
-    user_id: proposeTarget.id,
-    message: `${currentUser.company} предлагает встречу в ${allSlots.find(s=>s.id===proposeSlotId)?.time_label}`,
-    type: 'meeting_request',
-  });
-
-  await loadMeetings();
-  closeModal('modalPropose');
-  toast('Запрос отправлен ✓');
-  renderBuyers();
-}
-
-// ══════════════════════════════════════════════
-// RESPOND MEETING (buyer flow)
-// ══════════════════════════════════════════════
-function openMeeting(meetingId) {
-  meetingTarget = myMeetings.find(m => m.id === meetingId);
-  altSlotId = null;
-  document.getElementById('altSlotGroup').style.display = 'none';
-
-  const seller = meetingTarget.seller;
-  const slot   = meetingTarget.slot;
-  // Find full seller data from allSellers
-  const fullSeller = allSellers.find(function(s){ return s.id === (seller && seller.id); }) || seller || {};
-  const sellerInitials = (fullSeller.name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-  document.getElementById('meetingDetail').innerHTML =
-    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">' +
-      '<div style="width:46px;height:46px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:14px;color:var(--gold);flex-shrink:0;overflow:hidden;">' +
-        (fullSeller.avatar_url ? '<img src="'+fullSeller.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : sellerInitials) +
-      '</div>' +
-      '<div style="flex:1;">' +
-        '<div style="font-weight:500;font-size:15px;">' + (fullSeller.name||'—') + '</div>' +
-        '<div style="font-size:12px;color:var(--text-dim);">' + (fullSeller.company||'—') + '</div>' +
-      '</div>' +
-      (fullSeller.logo_url ? '<img src="'+fullSeller.logo_url+'" style="height:32px;width:auto;object-fit:contain;max-width:90px;">' : '') +
-    '</div>' +
-    '<div class="profile-block">' +
-      '<div class="profile-row"><span class="profile-key">Время встречи</span><span class="profile-val" style="color:var(--gold);font-weight:600;font-size:15px;">' + (slot&&slot.time_label||'—') + '</span></div>' +
-      (fullSeller.directions&&fullSeller.directions.length ? '<div class="profile-row"><span class="profile-key">Направления</span><span class="profile-val">' + fullSeller.directions.join(', ') + '</span></div>' : '') +
-      (fullSeller.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">' + fullSeller.audience + '</span></div>' : '') +
-      (fullSeller.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">' + fullSeller.services + '</span></div>' : '') +
-      (fullSeller.utp ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">' + fullSeller.utp + '</span></div>' : '') +
-      (fullSeller.notes ? '<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">' + fullSeller.notes + '</span></div>' : '') +
-    '</div>';
-
-  document.getElementById('modalMeeting').style.display = 'flex';
-}
-
-function toggleAltSlot() {
-  const g = document.getElementById('altSlotGroup');
-  const showing = g.style.display !== 'none';
-  if (showing) { g.style.display = 'none'; altSlotId = null; return; }
-
-  // build alt slots (exclude current)
-  const takenSlots = myMeetings
-    .filter(m => (m.buyer_id === currentUser.id || m.buyer?.id === currentUser.id) && m.status === 'confirmed')
-    .map(m => m.slot_id);
-
-  g.style.display = 'block';
-  document.getElementById('altSlots').innerHTML = allSlots.map(function(s) {
-    var taken = takenSlots.includes(s.id) || s.id === meetingTarget.slot_id;
-    var cls = 'slot-btn' + (taken ? ' taken' : '');
-    var oc = taken ? '' : ' onclick="selectAltSlot(\'' + s.id + '\', this)"';
-    var dis = taken ? ' disabled' : '';
-    return '<button class="' + cls + '"' + oc + dis + '>' + s.time_label + '</button>';
-  }).join('');
-}
-
-function selectAltSlot(slotId, btn) {
-  altSlotId = slotId;
-  document.querySelectorAll('#altSlots .slot-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
-async function respondMeeting(status) {
-  if (!meetingTarget) return;
-
-  const updates = { status, updated_at: new Date().toISOString() };
-  if (status === 'pending' && altSlotId) {
-    updates.alt_slot_id = altSlotId;
-    updates.proposed_by = 'buyer';
-  }
-
-  const { error } = await sb.from('meetings').update(updates).eq('id', meetingTarget.id);
-  if (error) { toast('Ошибка обновления'); return; }
-
-  // Notify seller
-  const slotLabel = allSlots.find(s => s.id === meetingTarget.slot_id)?.time_label;
-  const msgMap = {
-    confirmed: `${currentUser.company} подтвердил встречу в ${slotLabel}`,
-    declined:  `${currentUser.company} отклонил запрос на ${slotLabel}`,
-  };
-  await sb.from('notifications').insert({
-    user_id: meetingTarget.seller_id || meetingTarget.seller?.id,
-    message: msgMap[status] || 'Ответ на запрос встречи',
-    type: 'meeting_' + status,
-  });
-
-  await loadMeetings();
-  closeModal('modalMeeting');
-  toast(status === 'confirmed' ? 'Встреча подтверждена ✓' : 'Запрос отклонён');
-  renderRequests();
-}
-
-// ══════════════════════════════════════════════
-// MATCH REASON
-// ══════════════════════════════════════════════
-function showReason(buyerId) {
-  const m = getMatch(buyerId);
-  document.getElementById('reasonText').textContent = m.reason || 'Подробное обоснование будет доступно после AI-анализа профилей';
-  document.getElementById('modalReason').style.display = 'flex';
-}
-
-// ══════════════════════════════════════════════
-// REALTIME
-// ══════════════════════════════════════════════
-function setupRealtime() {
-  realtimeChannel = sb.channel('platform')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async () => {
-      await loadMeetings();
-      render();
-    })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, async () => {
-      await loadNotifs();
-    })
-    .subscribe();
-}
-
-// ══════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function toast(msg, dur = 3000) {
-  const el = document.createElement('div');
-  el.className = 'toast'; el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), dur);
-}
-
-function formatTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleDateString('ru-RU', { day:'numeric', month:'short' }) + ' ' +
-         d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
-}
-
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
-});
-
-// Enter key on login
-document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-
-
-// ══════════════════════════════════════════════
-// ADMIN: CREATE PARTICIPANT
-// ══════════════════════════════════════════════
-
-function generateLogin(company) {
-  const map = {
-    'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
-    'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
-    'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh',
-    'щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
-    ' ':''
-  };
-  return company.toLowerCase()
-    .split('').map(c => map[c] !== undefined ? map[c] : c)
-    .join('').replace(/[^a-z0-9]/g,'').slice(0,16);
-}
-
-function generatePassword() {
-  const lower = 'abcdefghjkmnpqrstuvwxyz';
-  const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
-  const digits = '23456789';
-  const special = '!@#';
-  let p = upper[Math.floor(Math.random()*upper.length)];
-  for (let i=0;i<5;i++) p += lower[Math.floor(Math.random()*lower.length)];
-  p += digits[Math.floor(Math.random()*digits.length)];
-  p += special[Math.floor(Math.random()*special.length)];
-  return p;
-}
-
-let _generatedPass = '';
-
-function previewLogin(company) {
-  const preview = document.getElementById('loginPreview');
-  if (!company.trim()) { preview.style.display = 'none'; _generatedPass = ''; return; }
-  if (!_generatedPass) _generatedPass = generatePassword();
-  const login = generateLogin(company);
-  document.getElementById('previewLoginVal').textContent = login;
-  document.getElementById('previewPassVal').textContent = _generatedPass;
-  preview.style.display = 'block';
-}
-
-function showCredentials(login, pass, name, company, role) {
-  const roleLabel = role === 'seller' ? 'Селлер' : 'Байер';
-  const copyText = 'Логин: ' + login + '\nПароль: ' + pass;
-  const div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.style.display = 'flex';
-  const inner = document.createElement('div');
-  inner.className = 'modal';
-  inner.style.cssText = 'width:420px;text-align:center;';
-  inner.innerHTML =
-    '<div style="font-size:32px;margin-bottom:8px;">✓</div>' +
-    '<div class="modal-title" style="text-align:center;margin-bottom:16px;">Участник создан!</div>' +
-    '<div style="background:rgba(26,29,74,0.8);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">' +
-      '<div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">' + name + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">' + company + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">' + roleLabel + '</span></div>' +
-      '<div class="divider"></div>' +
-      '<div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold);">' + login + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Пароль</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold-lt);">' + pass + '</span></div>' +
-    '</div>' +
-    '<div style="font-size:12px;color:var(--warn);margin-bottom:16px;">⚠ Скопируй и отправь участнику — пароль показывается один раз</div>';
-  const btnCopy = document.createElement('button');
-  btnCopy.className = 'btn btn-gold';
-  btnCopy.style.cssText = 'width:100%;justify-content:center;margin-bottom:8px;';
-  btnCopy.textContent = 'Скопировать данные';
-  btnCopy.onclick = function() {
-    navigator.clipboard.writeText(copyText);
-    btnCopy.textContent = '✓ Скопировано!';
-    setTimeout(function(){ btnCopy.textContent = 'Скопировать данные'; }, 2000);
-  };
-  const btnClose = document.createElement('button');
-  btnClose.className = 'btn btn-outline';
-  btnClose.style.cssText = 'width:100%;justify-content:center;';
-  btnClose.textContent = 'Закрыть';
-  btnClose.onclick = function() { div.remove(); };
-  inner.appendChild(btnCopy);
-  inner.appendChild(btnClose);
-  div.appendChild(inner);
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-function showCredentials(login, pass, name, company, role) {
-  const roleLabel = role === 'seller' ? 'Селлер' : 'Байер';
-  const copyText = 'Логин: ' + login + '\nПароль: ' + pass;
-  const div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.style.display = 'flex';
-  const inner = document.createElement('div');
-  inner.className = 'modal';
-  inner.style.cssText = 'width:420px;text-align:center;';
-  inner.innerHTML =
-    '<div style="font-size:32px;margin-bottom:8px;">✓</div>' +
-    '<div class="modal-title" style="text-align:center;margin-bottom:16px;">Участник создан!</div>' +
-    '<div style="background:rgba(26,29,74,0.8);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;">' +
-      '<div class="profile-row"><span class="profile-key">Имя</span><span class="profile-val">' + name + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Компания</span><span class="profile-val">' + company + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Роль</span><span class="profile-val">' + roleLabel + '</span></div>' +
-      '<div class="divider"></div>' +
-      '<div class="profile-row"><span class="profile-key">Логин</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold);">' + login + '</span></div>' +
-      '<div class="profile-row"><span class="profile-key">Пароль</span><span class="profile-val" style="font-family:monospace;font-size:16px;color:var(--gold-lt);">' + pass + '</span></div>' +
-    '</div>' +
-    '<div style="font-size:12px;color:var(--warn);margin-bottom:16px;">⚠ Скопируй и отправь участнику — пароль показывается один раз</div>';
-  const btnCopy = document.createElement('button');
-  btnCopy.className = 'btn btn-gold';
-  btnCopy.style.cssText = 'width:100%;justify-content:center;margin-bottom:8px;';
-  btnCopy.textContent = 'Скопировать данные';
-  btnCopy.onclick = function() {
-    navigator.clipboard.writeText(copyText);
-    btnCopy.textContent = '✓ Скопировано!';
-    setTimeout(function(){ btnCopy.textContent = 'Скопировать данные'; }, 2000);
-  };
-  const btnClose = document.createElement('button');
-  btnClose.className = 'btn btn-outline';
-  btnClose.style.cssText = 'width:100%;justify-content:center;';
-  btnClose.textContent = 'Закрыть';
-  btnClose.onclick = function() { div.remove(); };
-  inner.appendChild(btnCopy);
-  inner.appendChild(btnClose);
-  div.appendChild(inner);
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
-  document.body.appendChild(div);
-}
-
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 async function saveProfile() {
@@ -1922,43 +1519,76 @@ function exportAdminPDF() {
 // ══════════════════════════════════════════════
 // BUYER PROFILE CARD (for sellers to view)
 // ══════════════════════════════════════════════
-function showBuyerCard(buyerId) {
-  const buyer = allBuyers.find(function(b){ return b.id === buyerId; });
+async function showBuyerCard(buyerId) {
+  const buyer = allBuyers.find(b => b.id === buyerId);
   if (!buyer) return;
-  const initials = buyer.name.split(' ').map(function(w){ return w[0]||''; }).join('').slice(0,2).toUpperCase();
-  const m = getMatch(buyerId);
+
+  // Load all people from this company
+  const { data: people } = await sb.from('users')
+    .select('id,name,notes,telegram_id').eq('company', buyer.company).eq('event_id', EVENT_ID)
+    .eq('role','buyer').order('name');
+
+  const logoHtml = buyer.logo_url
+    ? '<img src="'+buyer.logo_url+'" style="height:40px;width:auto;object-fit:contain;max-width:120px;">'
+    : '';
+
+  const dirs = (buyer.directions&&buyer.directions.length)
+    ? buyer.directions.map(d=>'<span class="tag" style="font-size:11px;padding:2px 10px;">'+escHtml(d)+'</span>').join('')
+    : '';
+
+  const contactsHtml = (people||[]).map(p => {
+    const ini = p.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(178,144,106,0.08);">' +
+      '<div style="width:32px;height:32px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0;">'+ini+'</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:500;">'+escHtml(p.name)+'</div>' +
+        (p.notes ? '<div style="font-size:11px;color:var(--text-dim);">'+escHtml(p.notes)+'</div>' : '') +
+        (p.telegram_id ? '<div style="font-size:11px;color:var(--gold-lt);">'+escHtml(p.telegram_id)+'</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const existing = myMeetings.find(mt =>
+    (mt.seller_id===currentUser.id||(mt.seller&&mt.seller.id===currentUser.id)) &&
+    (mt.buyer_id===buyer.id||(mt.buyer&&mt.buyer.id===buyer.id)));
 
   const div = document.createElement('div');
   div.className = 'modal-overlay';
   div.style.display = 'flex';
   div.innerHTML =
-    '<div class="modal" style="width:440px;">' +
-      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">' +
-        '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-family:Unbounded,sans-serif;font-size:18px;color:var(--gold);flex-shrink:0;overflow:hidden;">' +
-          (buyer.avatar_url ? '<img src="'+buyer.avatar_url+'" style="width:100%;height:100%;object-fit:cover;">' : initials) +
-        '</div>' +
+    '<div class="modal" style="width:460px;max-height:88vh;overflow-y:auto;">' +
+      // Header — company first
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">' +
         '<div>' +
-          '<div style="font-size:17px;font-weight:600;">' + buyer.company + '</div>' +
-          '<div style="font-size:13px;color:var(--text-dim);margin-top:2px;">' + buyer.name + '</div>' +
-          (m.rate > 0 ? '<div style="margin-top:6px;"><span class="match-badge '+(m.rate>=65?'match-gold':m.rate>=40?'match-ok':'match-dim')+'"><span class="match-dot '+(m.rate>=65?'dot-gold':m.rate>=40?'dot-ok':'dot-dim')+'"></span>Match Rate: '+m.rate+'%</span></div>' : '') +
+          '<div style="font-size:19px;font-weight:700;margin-bottom:4px;">'+escHtml(buyer.company)+'</div>' +
+          (buyer.audience ? '<div style="font-size:12px;color:var(--gold-lt);">'+escHtml(buyer.audience)+'</div>' : '') +
         '</div>' +
-        (buyer.logo_url ? '<img src="'+buyer.logo_url+'" style="height:36px;width:auto;object-fit:contain;margin-left:auto;max-width:100px;">' : '') +
+        (logoHtml || '') +
       '</div>' +
+      // Directions
+      (dirs ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;">'+dirs+'</div>' : '') +
+      // Info block
       '<div class="profile-block">' +
-        (buyer.audience ? '<div class="profile-row"><span class="profile-key">Аудитория</span><span class="profile-val">'+buyer.audience+'</span></div>' : '') +
-        (buyer.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">'+buyer.services+'</span></div>' : '') +
-        (buyer.notes    ? '<div class="profile-row"><span class="profile-key">Заметки</span><span class="profile-val">'+buyer.notes+'</span></div>' : '') +
-        (!buyer.audience && !buyer.services && !buyer.notes ?
-          '<div style="text-align:center;color:var(--text-dim);padding:16px;font-size:13px;">Участник ещё не заполнил профиль</div>' : '') +
+        (buyer.services ? '<div class="profile-row"><span class="profile-key">Услуги</span><span class="profile-val">'+escHtml(buyer.services)+'</span></div>' : '') +
+        (buyer.utp      ? '<div class="profile-row"><span class="profile-key">УТП</span><span class="profile-val">'+escHtml(buyer.utp)+'</span></div>' : '') +
+        (buyer.notes    ? '<div class="profile-row"><span class="profile-key">О компании</span><span class="profile-val">'+escHtml(buyer.notes)+'</span></div>' : '') +
+        (!buyer.services && !buyer.utp && !buyer.notes && !buyer.audience
+          ? '<div style="text-align:center;color:var(--text-dim);padding:12px;font-size:13px;">Профиль ещё не заполнен</div>' : '') +
       '</div>' +
-      (m.reason ? '<div style="margin-top:12px;padding:12px;background:rgba(178,144,106,0.08);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.5;"><b style="color:var(--gold);">Почему этот матч:</b> ' + m.reason + '</div>' : '') +
-      '<div class="modal-actions">' +
-        '<button class="btn btn-outline btn-sm" onclick="this.closest(\'.modal-overlay\').remove()">Закрыть</button>' +
-        '<button class="btn btn-gold btn-sm" onclick="this.closest(\'.modal-overlay\').remove();openPropose(\''+buyerId+'\')">Предложить встречу</button>' +
+      // Contacts
+      '<div style="margin-top:14px;">' +
+        '<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Представители</div>' +
+        contactsHtml +
+      '</div>' +
+      '<div class="modal-actions" style="margin-top:16px;">' +
+        '<button class="btn btn-outline btn-sm" onclick="this.closest(&quot;.modal-overlay&quot;).remove()">Закрыть</button>' +
+        (currentUser.role==='seller' && !existing
+          ? '<button class="btn btn-gold btn-sm" onclick="this.closest(&quot;.modal-overlay&quot;).remove();openPropose(&quot;'+buyerId+'&quot;)">Предложить встречу</button>'
+          : (existing ? '<span style="font-size:12px;color:'+(existing.status==='confirmed'?'#4ade80':'var(--gold-lt)')+';">'+(existing.status==='confirmed'?'✓ Встреча подтверждена':'⏳ Запрос отправлен')+'</span>' : '')) +
       '</div>' +
     '</div>';
 
-  div.addEventListener('click', function(e){ if(e.target===div) div.remove(); });
+  div.addEventListener('click', e=>{ if(e.target===div) div.remove(); });
   document.body.appendChild(div);
 }
 
