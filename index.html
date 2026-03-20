@@ -825,64 +825,45 @@ async function renderBuyers() {
   try {
     const el = document.getElementById('buyersList');
     if (!el) return;
-
-    // If allBuyers is empty, try loading directly (safety net)
-    if (!allBuyers.length) {
-      await loadUsers();
-    }
-
+    if (!allBuyers.length) await loadUsers();
     const buyers = allBuyers;
     if (!buyers.length) {
-      el.innerHTML = '<div class="empty" style="padding:32px;text-align:center;color:var(--text-dim);">Байеры не найдены в базе данных</div>';
+      el.innerHTML = '<div class="empty" style="padding:32px;text-align:center;color:var(--text-dim);">Байеры не найдены</div>';
       return;
     }
-
-    let sorted = [...buyers];
-    if (currentUser.role === 'seller') {
-      sorted.sort(function(a,b) {
-        const ma = getMatch(a.id); const mb = getMatch(b.id);
-        if (mb.rate !== ma.rate) return mb.rate - ma.rate;
-        return a.company.localeCompare(b.company, 'ru');
-      });
-    }
+    let sorted = [...buyers].sort(function(a,b){ return a.company.localeCompare(b.company, 'ru'); });
 
     el.innerHTML = sorted.map(function(b) {
-      const m = getMatch(b.id);
       const initials = b.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-      const matchCls = m.rate >= 65 ? 'match-gold' : m.rate >= 40 ? 'match-ok' : 'match-dim';
-      const dotCls   = m.rate >= 65 ? 'dot-gold'   : m.rate >= 40 ? 'dot-ok'   : 'dot-dim';
       const existing = myMeetings.find(function(mt) {
         return (mt.seller_id === currentUser.id || (mt.seller && mt.seller.id === currentUser.id)) &&
                (mt.buyer_id  === b.id           || (mt.buyer  && mt.buyer.id  === b.id));
       });
-      const btnDisabled = (currentUser.role === 'admin' || !!existing) ? 'disabled' : '';
-      const btnLabel = existing
-        ? (existing.status === 'confirmed' ? '&#10003; Подтверждено' : '&#9203; Ожидает')
-        : 'Предложить встречу';
+      const meetStatus = existing
+        ? (existing.status === 'confirmed'
+            ? '<span style="color:#4ade80;font-size:12px;font-weight:500;">&#10003; Подтверждено</span>'
+            : '<span style="color:var(--gold-lt);font-size:12px;">&#9203; Ожидает</span>')
+        : '';
 
       const dirTags = (b.directions && b.directions.length)
-        ? b.directions.slice(0,3).map(function(d){ return '<span class="tag" style="font-size:10px;padding:1px 7px;">' + d + '</span>'; }).join('')
-        : '';
-      const audienceHint = b.audience
-        ? '<span style="font-size:11px;color:var(--text-dim);margin-left:4px;">· ' + b.audience + '</span>'
+        ? b.directions.slice(0,4).map(function(d){ return '<span class="tag" style="font-size:10px;padding:2px 8px;">' + d + '</span>'; }).join('')
         : '';
 
-      return '<div class="buyer-item" style="flex-wrap:wrap;gap:10px;">' +
-        '<div class="buyer-info" style="cursor:pointer;flex:1;min-width:0;" onclick="showBuyerCard(\'' + b.id + '\')">' +
-          '<div class="buyer-avatar" style="flex-shrink:0;">' + initials + '</div>' +
-          '<div style="min-width:0;">' +
-            '<div class="buyer-name" style="display:flex;align-items:center;gap:4px;">' +
-              b.company +
-              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
-            '</div>' +
-            '<div class="buyer-company">' + b.name + audienceHint + '</div>' +
-            (dirTags ? '<div style="margin-top:4px;">' + dirTags + '</div>' : '') +
+      return '<div class="buyer-item" style="align-items:flex-start;gap:12px;padding:14px 0;">' +
+        '<div class="buyer-avatar" style="flex-shrink:0;margin-top:2px;">' + initials + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:2px;">' + b.company + '</div>' +
+          '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">' + b.name +
+            (b.audience ? ' · <span style="color:var(--gold-lt);">' + b.audience + '</span>' : '') +
           '</div>' +
+          (dirTags ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">' + dirTags + '</div>' : '') +
+          (b.services ? '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">🧩 ' + b.services + '</div>' : '') +
         '</div>' +
-        '<div class="buyer-right" style="flex-shrink:0;">' +
-          (m.rate > 0 ? '<div class="match-badge ' + matchCls + '"><span class="match-dot ' + dotCls + '"></span>' + m.rate + '%</div>' : '') +
-          (currentUser.role === 'seller'
-            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" ' + btnDisabled + '>' + btnLabel + '</button>'
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
+          meetStatus +
+          '<button class="btn btn-outline btn-sm" onclick="showBuyerCard(\'' + b.id + '\')" style="font-size:11px;">Подробнее</button>' +
+          (currentUser.role === 'seller' && !existing
+            ? '<button class="btn btn-gold btn-sm" onclick="openPropose(\'' + b.id + '\')" style="font-size:11px;">Встреча</button>'
             : '') +
         '</div>' +
       '</div>';
@@ -890,7 +871,7 @@ async function renderBuyers() {
   } catch(err) {
     console.error('renderBuyers error:', err);
     var el = document.getElementById('buyersList');
-    if (el) el.innerHTML = '<div class="empty" style="color:#f87171;padding:20px;">Ошибка загрузки байеров: ' + err.message + '</div>';
+    if (el) el.innerHTML = '<div style="color:#f87171;padding:20px;">Ошибка: ' + err.message + '</div>';
   }
 }
 
@@ -1001,6 +982,86 @@ async function renderNotifications() {
 }
 
 /* renderProfile — moved to profile section below */
+
+function renderProfile() {
+  const el = document.getElementById('profileContent');
+  if (!el) return;
+  const u = currentUser;
+  const isSeller = u.role === 'seller';
+  const isBuyer  = u.role === 'buyer';
+
+  const initials = u.name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+
+  el.innerHTML =
+    '<div style="max-width:600px;">' +
+
+      // Avatar + name block
+      '<div class="card" style="display:flex;align-items:center;gap:16px;margin-bottom:16px;padding:20px;">' +
+        '<div style="width:56px;height:56px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);flex-shrink:0;">' + initials + '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:17px;font-weight:600;">' + escHtml(u.name) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-dim);">' + escHtml(u.company) + '</div>' +
+          '<div style="font-size:11px;color:var(--gold-lt);margin-top:2px;">Логин: ' + escHtml(u.login) + '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // Edit form
+      '<div class="card" style="padding:20px;">' +
+        '<div class="card-title" style="margin-bottom:14px;">Редактировать профиль</div>' +
+
+        // Logo upload block
+        '<div style="margin-bottom:16px;padding:14px;background:rgba(26,29,74,0.5);border-radius:10px;display:flex;align-items:center;gap:16px;">' +
+          '<div id="logoPreview" style="width:72px;height:48px;border-radius:8px;background:var(--navy-b);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid rgba(178,144,106,0.2);">' +
+            (u.logo_url
+              ? '<img src="' + u.logo_url + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">'
+              : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>') +
+          '</div>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:13px;font-weight:500;margin-bottom:4px;">Логотип компании</div>' +
+            '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">PNG, JPG или SVG · прозрачный фон предпочтительнее · до 1 МБ · рекомендуется 300×100 px</div>' +
+            '<label class="btn btn-outline btn-sm" style="cursor:pointer;font-size:11px;">' +
+              'Загрузить логотип' +
+              '<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none;" onchange="uploadAvatar(this,\'logo\')">' +
+            '</label>' +
+            (u.logo_url ? ' <button class="btn btn-sm" style="font-size:11px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);" onclick="removeLogo()">Удалить</button>' : '') +
+          '</div>' +
+        '</div>' +
+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Имя</label>' +
+            '<input id="pName" class="form-input" value="' + escHtml(u.name) + '"></div>' +
+          '<div class="form-group" style="margin:0;"><label class="form-label">Компания</label>' +
+            '<input id="pCompany" class="form-input" value="' + escHtml(u.company) + '" ' + (isBuyer ? '' : 'readonly style="opacity:0.6;"') + '></div>' +
+        '</div>' +
+
+        (isSeller ?
+          '<div class="form-group"><label class="form-label">Направления (через запятую)</label>' +
+            '<input id="pDirections" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '" placeholder="Таиланд, Вьетнам, Бали"></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+            '<div class="form-group" style="margin:0;"><label class="form-label">Целевая аудитория</label>' +
+              '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семейный отдых, молодёжь"></div>' +
+            '<div class="form-group" style="margin:0;"><label class="form-label">Ключевые услуги</label>' +
+              '<input id="pServices" class="form-input" value="' + escHtml(u.services||'') + '" placeholder="Групповые туры, экскурсии"></div>' +
+          '</div>' +
+          '<div class="form-group"><label class="form-label">УТП — уникальное торговое предложение</label>' +
+            '<textarea id="pUtp" class="form-input" rows="3" placeholder="Что вас отличает от других?">' + escHtml(u.utp||'') + '</textarea></div>' +
+          '<div class="form-group"><label class="form-label">Заметки для партнёров</label>' +
+            '<textarea id="pNotes" class="form-input" rows="2" placeholder="Принимаем группы от 15 чел, работаем по предоплате...">' + escHtml(u.notes||'') + '</textarea></div>'
+        : '') +
+
+        (isBuyer ?
+          '<div class="form-group"><label class="form-label">Что ищете / интересы</label>' +
+            '<textarea id="pNotes" class="form-input" rows="3" placeholder="Ищем туры в Азию, бюджет средний и выше...">' + escHtml(u.notes||'') + '</textarea></div>' +
+          '<div class="form-group"><label class="form-label">Целевая аудитория ваших клиентов</label>' +
+            '<input id="pAudience" class="form-input" value="' + escHtml(u.audience||'') + '" placeholder="Семьи, корпоративные группы..."></div>'
+        : '') +
+
+        '<div style="margin-top:4px;">' +
+          '<button class="btn btn-gold" onclick="saveProfile()" style="padding:10px 28px;">Сохранить профиль</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
 
 /* ── ADMIN ── */
 async function renderAdmin() {
@@ -1424,33 +1485,35 @@ async function saveProfile() {
 async function uploadAvatar(input, type) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 1 * 1024 * 1024) { toast('Файл слишком большой — максимум 1 МБ. Сожми фото и попробуй снова.'); return; }
+  if (file.size > 1 * 1024 * 1024) { toast('Файл слишком большой — максимум 1 МБ. Сожми изображение и попробуй снова.'); return; }
 
-  // Convert to base64 data URL and store in users table (no storage bucket needed for MVP)
   const reader = new FileReader();
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
-    const updateData = type === 'avatar' ? { avatar_url: dataUrl } : { logo_url: dataUrl };
+    const field = type === 'avatar' ? 'avatar_url' : 'logo_url';
+    const updateData = { [field]: dataUrl };
     const { error } = await sb.from('users').update(updateData).eq('id', currentUser.id);
     if (error) { toast('Ошибка загрузки: ' + error.message); return; }
-    currentUser[col] = dataUrl;
+    currentUser[field] = dataUrl;
 
-    // Update preview
-    const previewId = type === 'avatar' ? 'avatarPreview' : 'logoPreview';
-    const el = document.getElementById(previewId);
-    if (el) {
-      if (type === 'avatar') {
-        el.innerHTML = '<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;">';
-      } else {
-        el.innerHTML = '<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:contain;padding:6px;">';
-      }
+    // Update logo preview in profile
+    const previewEl = document.getElementById('logoPreview');
+    if (previewEl && type === 'logo') {
+      previewEl.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:contain;padding:4px;">';
     }
-
-    // Update header avatar if seller/buyer
     updateHeaderAvatar();
-    toast(type === 'avatar' ? 'Фото загружено ✓' : 'Логотип загружен ✓');
+    toast(type === 'logo' ? 'Логотип загружен ✓' : 'Фото загружено ✓');
   };
   reader.readAsDataURL(file);
+}
+
+async function removeLogo() {
+  if (!confirm('Удалить логотип компании?')) return;
+  const { error } = await sb.from('users').update({ logo_url: null }).eq('id', currentUser.id);
+  if (error) { toast('Ошибка: ' + error.message); return; }
+  currentUser.logo_url = null;
+  toast('Логотип удалён');
+  renderProfile();
 }
 
 function updateHeaderAvatar() {
@@ -1593,48 +1656,71 @@ async function openEditParticipant(userId) {
   if (!u) return;
   _editUserId = userId;
 
-  // Count siblings (same company, same event)
-  const { data: siblings } = await sb.from('users')
-    .select('id').eq('company', u.company).eq('event_id', EVENT_ID).neq('id', userId).neq('role','admin');
-  const sibCount = siblings ? siblings.length : 0;
+  // Load all people from the same company
+  const { data: companyPeople } = await sb.from('users')
+    .select('id,name,notes').eq('company', u.company).eq('event_id', EVENT_ID)
+    .neq('role','admin').order('name');
+
+  const isSeller = u.role === 'seller';
+
+  // Build rows for each person in this company
+  const peopleRows = (companyPeople || []).map(function(p) {
+    var isMe = p.id === userId;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(178,144,106,0.07);">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:var(--navy-b);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);flex-shrink:0;">' +
+        p.name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() +
+      '</div>' +
+      '<div style="flex:1;font-size:13px;">' + p.name + (isMe ? ' <span style="font-size:10px;color:var(--gold-lt);">(редактируется)</span>' : '') + '</div>' +
+      (!isMe ? '<button class="btn btn-outline btn-sm" style="font-size:10px;" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove();openEditParticipant(&quot;' + p.id + '&quot;)">Изменить</button>' : '') +
+    '</div>';
+  }).join('');
 
   const div = document.createElement('div');
   div.className = 'modal-overlay';
   div.id = 'modalEditParticipant';
   div.style.display = 'flex';
 
-  const isSeller = u.role === 'seller';
   div.innerHTML =
-    '<div class="modal" style="width:520px;max-height:90vh;overflow-y:auto;">' +
-      '<div class="modal-title">Редактировать участника</div>' +
+    '<div class="modal" style="width:560px;max-height:90vh;overflow-y:auto;">' +
+      '<div class="modal-title">Компания: ' + escHtml(u.company) + '</div>' +
+
+      // Company people block
+      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:12px 14px;margin-bottom:16px;">' +
+        '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Представители компании</div>' +
+        peopleRows +
+        '<button class="btn btn-outline btn-sm" style="margin-top:10px;font-size:11px;width:100%;" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove();openAddPersonModal({dataset:{company:&quot;' + escHtml(u.company).replace(/"/g,'') + '&quot;,role:&quot;' + u.role + '&quot;}})">+ Добавить представителя</button>' +
+          '+ Добавить представителя' +
+        '</button>' +
+      '</div>' +
+
+      '<div class="divider" style="margin:0 0 14px;"></div>' +
+      '<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Данные участника: <b style="color:var(--gold);">' + escHtml(u.name) + '</b></div>' +
+
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
         '<div class="form-group"><label class="form-label">Имя</label><input id="ep_name" class="form-input" value="' + escHtml(u.name) + '"></div>' +
-        '<div class="form-group"><label class="form-label">Компания</label><input id="ep_company" class="form-input" value="' + escHtml(u.company) + '"></div>' +
-        '<div class="form-group"><label class="form-label">Логин</label><input id="ep_login" class="form-input" value="' + escHtml(u.login) + '"></div>' +
-        '<div class="form-group"><label class="form-label">Пароль (новый, или оставь пустым)</label><input id="ep_pass" class="form-input" placeholder="не менять"></div>' +
+        '<div class="form-group"><label class="form-label">Должность</label><input id="ep_position" class="form-input" value="' + escHtml(u.notes||'') + '" placeholder="Менеджер по продажам"></div>' +
+        '<div class="form-group"><label class="form-label">Telegram ID</label><input id="ep_tg" class="form-input" value="' + escHtml(u.telegram_id||'') + '" placeholder="@username"></div>' +
         '<div class="form-group"><label class="form-label">Роль</label>' +
           '<select id="ep_role" class="form-input">' +
             '<option value="seller"' + (u.role==='seller'?' selected':'') + '>Селлер</option>' +
             '<option value="buyer"' + (u.role==='buyer'?' selected':'') + '>Байер</option>' +
           '</select></div>' +
-        '<div class="form-group"><label class="form-label">Telegram ID</label><input id="ep_tg" class="form-input" value="' + escHtml(u.telegram_id||'') + '" placeholder="@username"></div>' +
+        // Hidden fields (company/login stay synced at company level)
+        '<input type="hidden" id="ep_company" value="' + escHtml(u.company) + '">' +
+        '<input type="hidden" id="ep_login" value="' + escHtml(u.login) + '">' +
       '</div>' +
+
       (isSeller ?
         '<div class="divider"></div>' +
         '<div class="form-group"><label class="form-label">Направления (через запятую)</label><input id="ep_dir" class="form-input" value="' + escHtml((u.directions||[]).join(', ')) + '"></div>' +
         '<div class="form-group"><label class="form-label">Целевая аудитория</label><input id="ep_aud" class="form-input" value="' + escHtml(u.audience||'') + '"></div>' +
         '<div class="form-group"><label class="form-label">Ключевые услуги</label><input id="ep_srv" class="form-input" value="' + escHtml(u.services||'') + '"></div>' +
         '<div class="form-group"><label class="form-label">УТП</label><textarea id="ep_utp" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>' +
-        '<div class="form-group"><label class="form-label">Заметки для партнёров</label><textarea id="ep_notes" class="form-input">' + escHtml(u.notes||'') + '</textarea></div>'
+        '<div class="form-group"><label class="form-label">Заметки для партнёров</label><textarea id="ep_utp2" class="form-input">' + escHtml(u.utp||'') + '</textarea></div>'
       : '') +
-      '<div style="background:rgba(26,29,74,0.5);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">' +
-        '<span>Участников от этой компании: <b style="color:var(--gold);">' + (sibCount+1) + '</b></span>' +
-        '<button class="btn btn-outline btn-sm" onclick="openAddPersonModalByData(this)" data-company="' + escHtml(u.company) + '" data-role="' + u.role + '" style="font-size:11px;">' +
-          '+ Добавить ещё от этой компании' +
-        '</button>' +
-      '</div>' +
+
       '<div class="modal-actions">' +
-        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'modalEditParticipant\').remove()">Отмена</button>' +
+        '<button class="btn btn-outline btn-sm" onclick="document.getElementById(&quot;modalEditParticipant&quot;).remove()">Отмена</button>' +
         '<button class="btn btn-gold btn-sm" onclick="saveEditParticipant()">Сохранить</button>' +
       '</div>' +
     '</div>';
@@ -1645,23 +1731,22 @@ async function openEditParticipant(userId) {
 
 async function saveEditParticipant() {
   const updates = {
-    name:    document.getElementById('ep_name').value.trim(),
-    company: document.getElementById('ep_company').value.trim(),
-    login:   document.getElementById('ep_login').value.trim().toLowerCase(),
-    role:    document.getElementById('ep_role').value,
+    name:       document.getElementById('ep_name').value.trim(),
+    company:    document.getElementById('ep_company').value.trim(),
+    login:      document.getElementById('ep_login').value.trim().toLowerCase(),
+    role:       document.getElementById('ep_role').value,
     telegram_id: document.getElementById('ep_tg').value.trim(),
+    notes:      document.getElementById('ep_position') ? document.getElementById('ep_position').value.trim() : '',
   };
-  const newPass = document.getElementById('ep_pass').value.trim();
-  if (newPass) updates.password_hash = newPass;
 
   const role = updates.role;
   if (role === 'seller') {
-    const dir = document.getElementById('ep_dir').value;
+    const dirEl = document.getElementById('ep_dir');
+    const dir = dirEl ? dirEl.value : '';
     updates.directions = dir ? dir.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
-    updates.audience = document.getElementById('ep_aud').value.trim();
-    updates.services = document.getElementById('ep_srv').value.trim();
-    updates.utp      = document.getElementById('ep_utp').value.trim();
-    updates.notes    = document.getElementById('ep_notes').value.trim();
+    updates.audience = (document.getElementById('ep_aud')||{value:''}).value.trim();
+    updates.services = (document.getElementById('ep_srv')||{value:''}).value.trim();
+    updates.utp      = (document.getElementById('ep_utp')||{value:''}).value.trim();
     updates.profile_ready = !!(updates.directions.length && updates.utp);
   }
 
